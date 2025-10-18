@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Intro as splash screen - black background with intro image -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Black background (same as intro) -->
+    <item>
+        <color android:color="#000000" />
+    </item>
+    
+    <!-- Brain app icon centered -->
+    <item android:gravity="center">
+        <bitmap android:src="@drawable/brain_app_icon" />
+    </item>
+</layer-list>

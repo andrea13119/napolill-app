@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rotating loading animation for splash screen -->
+<rotate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1000"
+    android:fromDegrees="0"
+    android:toDegrees="360"
+    android:pivotX="50%"
+    android:pivotY="50%"
+    android:repeatCount="infinite"
+    android:interpolator="@android:anim/linear_interpolator">
+    
+    <shape
+        android:shape="ring"
+        android:innerRadiusRatio="3"
+        android:thicknessRatio="8"
+        android:useLevel="false">
+        
+        <gradient
+            android:type="sweep"
+            android:startColor="#FFFFFF"
+            android:endColor="#00FFFFFF"
+            android:angle="0" />
+    </shape>
+</rotate>

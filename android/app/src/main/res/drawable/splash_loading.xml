@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash screen with image and rotating loading animation -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Black background -->
+    <item android:drawable="@android:color/black" />
+    
+    <!-- Your splash screen image centered -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/intro" />
+    </item>
+    
+    <!-- Rotating loading ring -->
+    <item android:gravity="center">
+        <rotate
+            android:duration="2000"
+            android:fromDegrees="0"
+            android:toDegrees="360"
+            android:pivotX="50%"
+            android:pivotY="50%"
+            android:repeatCount="infinite"
+            android:interpolator="@android:anim/linear_interpolator">
+            
+            <shape android:shape="ring"
+                android:innerRadius="80dp"
+                android:thickness="6dp"
+                android:useLevel="false">
+                <gradient
+                    android:type="sweep"
+                    android:startColor="#FFFFFFFF"
+                    android:centerColor="#80FFFFFF"
+                    android:endColor="#00FFFFFF" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>
