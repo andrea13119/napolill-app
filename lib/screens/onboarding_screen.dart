@@ -117,11 +117,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  void _completeOnboarding() {
-    // Mark onboarding as completed
-    ref.read(userPrefsProvider.notifier).updateConsent(true);
-    ref.read(userPrefsProvider.notifier).updatePrivacy(true);
-    ref.read(userPrefsProvider.notifier).updateAGB(true);
+  Future<void> _completeOnboarding() async {
+    // Mark onboarding as completed - warte darauf, dass alle Flags gespeichert sind
+    final notifier = ref.read(userPrefsProvider.notifier);
+    await notifier.updateConsent(true);
+    await notifier.updatePrivacy(true);
+    await notifier.updateAGB(true);
+
+    if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const TopicSelectionScreen()),
@@ -192,11 +195,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await ref.read(userPrefsProvider.notifier).updatePushAllowed(false);
   }
 
-  void _skipToTopicSelection() {
-    // Skip onboarding and go directly to topic selection
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const TopicSelectionScreen()),
-    );
+  Future<void> _skipToTopicSelection() async {
+    // Auch wenn der User die Push-Benachrichtigungen überspringt,
+    // müssen die Onboarding-Flags gesetzt werden, damit das Onboarding
+    // nicht wieder erscheint
+    await _completeOnboarding();
   }
 
   @override

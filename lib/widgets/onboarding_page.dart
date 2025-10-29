@@ -10,7 +10,7 @@ class OnboardingPage extends StatefulWidget {
   final OnboardingPageData data;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
-  final VoidCallback? onSkip;
+  final Future<void> Function()? onSkip;
   final Future<void> Function(bool)? onPushNotificationChoice;
   final Function(bool)? onCheckboxStateChanged;
   final bool? initialCheckboxState;
@@ -349,11 +349,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           onPressed: () async {
                             // Handle push notification choice in background
                             if (widget.onPushNotificationChoice != null) {
-                              widget.onPushNotificationChoice!(false);
+                              await widget.onPushNotificationChoice!(false);
                             }
-                            // Navigate immediately
+                            // Navigate after completing onboarding
                             if (widget.onSkip != null) {
-                              widget.onSkip!();
+                              await widget.onSkip!();
                             }
                           },
                           style: OutlinedButton.styleFrom(

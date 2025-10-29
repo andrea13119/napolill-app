@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/user_prefs.dart';
 import '../utils/app_theme.dart';
+import '../utils/mood_theme.dart';
 import 'home_screen.dart';
+import 'auth_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -156,6 +160,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildAccountSection(UserPrefs userPrefs) {
     final moodTheme = ref.watch(currentMoodThemeProvider);
+    final firebaseUser = ref.watch(currentUserProvider);
+
+    // Determine profile subtitle based on UserPrefs displayName or Firebase email
+    String profileSubtitle;
+    if (firebaseUser != null) {
+      // User is authenticated - show display name from UserPrefs or email
+      profileSubtitle =
+          userPrefs.displayName ?? firebaseUser.email ?? 'Angemeldet';
+    } else {
+      // User is not authenticated
+      profileSubtitle = 'Nicht angemeldet';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -218,7 +234,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSettingItem(
               icon: Icons.person,
               title: 'Profil',
-              subtitle: userPrefs.displayName ?? 'Nicht angemeldet',
+              subtitle: profileSubtitle,
               onTap: _showProfileDialog,
             ),
 
@@ -754,6 +770,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showProfileDialog() {
     final moodTheme = ref.read(currentMoodThemeProvider);
+    final user = ref.read(currentUserProvider);
+    final userPrefs = ref.read(userPrefsProvider);
+    final isAuthenticated = user != null;
 
     showDialog(
       context: context,
@@ -767,22 +786,889 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
         title: Text(
-          'Profil bearbeiten',
+          'Profil',
           style: AppTheme.headingStyle.copyWith(fontSize: 18),
         ),
-        content: Text(
-          'Profil-Bearbeitung wird implementiert',
-          style: AppTheme.bodyStyle,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isAuthenticated)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Nicht angemeldet',
+                    style: AppTheme.bodyStyle.copyWith(
+                      color: Colors.grey[400],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else ...[
+                // E-Mail
+                _buildProfileInfoRow(
+                  icon: Icons.email,
+                  label: 'E-Mail',
+                  value: user.email ?? 'Nicht verfügbar',
+                  moodTheme: moodTheme,
+                ),
+                const SizedBox(height: 12),
+                // Display Name (editable)
+                _buildEditableProfileInfoRow(
+                  icon: Icons.person,
+                  label: 'Anzeigename',
+                  value: userPrefs.displayName ?? 'Kein Name gesetzt',
+                  moodTheme: moodTheme,
+                  onEdit: () {
+                    Navigator.of(context).pop();
+                    _showEditDisplayNameDialog();
+                  },
+                ),
+                const SizedBox(height: 12),
+                // E-Mail Verifizierung
+                _buildEmailVerificationRow(
+                  isVerified: user.emailVerified,
+                  moodTheme: moodTheme,
+                  user: user,
+                ),
+                const SizedBox(height: 24),
+                // Buttons
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showResetPasswordDialog();
+                    },
+                    icon: const Icon(Icons.lock_reset, size: 20),
+                    label: const Text('Passwort zurücksetzen'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: moodTheme.accentColor.withValues(
+                        alpha: 0.2,
+                      ),
+                      foregroundColor: moodTheme.accentColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showSignOutConfirmationDialog();
+                    },
+                    icon: const Icon(Icons.logout, size: 20),
+                    label: const Text('Abmelden'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange.withValues(alpha: 0.2),
+                      foregroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showDeleteAccountConfirmationDialog();
+                    },
+                    icon: const Icon(Icons.delete_forever, size: 20),
+                    label: const Text('Account löschen'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.withValues(alpha: 0.2),
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
-            child: const Text('OK'),
+            child: const Text('Schließen'),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildProfileInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required MoodTheme moodTheme,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: moodTheme.accentColor, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTheme.bodyStyle.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: AppTheme.bodyStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditableProfileInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required MoodTheme moodTheme,
+    required VoidCallback onEdit,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: moodTheme.accentColor, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTheme.bodyStyle.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: AppTheme.bodyStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: onEdit,
+          icon: Icon(Icons.edit, color: moodTheme.accentColor, size: 20),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailVerificationRow({
+    required bool isVerified,
+    required MoodTheme moodTheme,
+    required User user,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          isVerified ? Icons.verified : Icons.warning_amber_rounded,
+          color: isVerified ? Colors.green : Colors.orange,
+          size: 20,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'E-Mail-Verifizierung',
+                style: AppTheme.bodyStyle.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isVerified ? 'E-Mail verifiziert' : 'E-Mail nicht verifiziert',
+                style: AppTheme.bodyStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isVerified ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isVerified)
+          TextButton(
+            onPressed: () => _handleResendVerificationEmail(user),
+            child: Text(
+              'Erneut senden',
+              style: TextStyle(color: moodTheme.accentColor, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _handleResendVerificationEmail(User user) async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.sendEmailVerification();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Verifizierungs-E-Mail wurde gesendet'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error sending verification email: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showResetPasswordDialog() {
+    final moodTheme = ref.read(currentMoodThemeProvider);
+    final user = ref.read(currentUserProvider);
+    final emailController = TextEditingController(text: user?.email ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: moodTheme.accentColor.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        title: Text(
+          'Passwort zurücksetzen',
+          style: AppTheme.headingStyle.copyWith(fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Gib deine E-Mail-Adresse ein, um ein neues Passwort anzufordern.',
+              style: AppTheme.bodyStyle,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: AppTheme.bodyStyle.copyWith(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'E-Mail',
+                labelStyle: AppTheme.bodyStyle.copyWith(
+                  color: Colors.grey[400],
+                ),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.1),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: moodTheme.accentColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bitte gib eine E-Mail-Adresse ein'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                final authService = ref.read(authServiceProvider);
+                await authService.resetPassword(email: email);
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('E-Mail wurde gesendet'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Fehler: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
+            child: const Text('Senden'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSignOutConfirmationDialog() {
+    final moodTheme = ref.read(currentMoodThemeProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: moodTheme.accentColor.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        title: Text(
+          'Abmelden',
+          style: AppTheme.headingStyle.copyWith(fontSize: 18),
+        ),
+        content: Text(
+          'Möchtest du dich wirklich abmelden?',
+          style: AppTheme.bodyStyle,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _handleSignOut();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Abmelden'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signOut();
+
+      if (mounted) {
+        // Navigate to AuthScreen and clear navigation stack
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error signing out: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Abmelden: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDeleteAccountConfirmationDialog() {
+    final moodTheme = ref.read(currentMoodThemeProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.red.withValues(alpha: 0.5), width: 2),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Account löschen',
+                style: AppTheme.headingStyle.copyWith(
+                  fontSize: 18,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Achtung: Diese Aktion kann nicht rückgängig gemacht werden!',
+              style: AppTheme.bodyStyle.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Wenn du deinen Account löschst, werden:',
+              style: AppTheme.bodyStyle,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '• Alle deine Daten dauerhaft gelöscht\n'
+              '• Alle lokalen Einstellungen zurückgesetzt\n'
+              '• Du musst dich neu registrieren, um die App wieder zu nutzen',
+              style: AppTheme.bodyStyle.copyWith(
+                fontSize: 12,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Bist du dir sicher, dass du deinen Account löschen möchtest?',
+              style: AppTheme.bodyStyle.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _handleDeleteAccount();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = ref.read(currentUserProvider);
+
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kein angemeldeter User gefunden'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check if user is signed in with Google
+      bool isGoogleUser = authService.isSignedInWithGoogle();
+
+      if (isGoogleUser) {
+        // Google user - deleteAccount will handle re-authentication automatically
+        await authService.deleteAccount();
+      } else {
+        // Email/Password user - need to get password from user first
+        final result = await _showReAuthPasswordDialog(user.email ?? '');
+        if (!result.success) {
+          return; // User canceled
+        }
+        // Delete account with credentials for re-authentication
+        await authService.deleteAccount(
+          email: user.email,
+          password: result.password,
+        );
+      }
+
+      // Reset local user preferences
+      await ref.read(userPrefsProvider.notifier).resetForTesting();
+
+      if (mounted) {
+        // Navigate to AuthScreen and clear navigation stack
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          (route) => false,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account wurde erfolgreich gelöscht'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Error deleting account: $e');
+      if (mounted) {
+        String errorMessage = 'Fehler beim Löschen';
+        if (e.code == 'requires-recent-login') {
+          errorMessage =
+              'Bitte melde dich erneut an, um diese Aktion durchzuführen';
+        } else if (e.message != null) {
+          errorMessage = e.message!;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting account: $e');
+      if (mounted) {
+        String errorMessage = e.toString();
+        if (errorMessage.contains('requires-recent-login')) {
+          errorMessage =
+              'Bitte melde dich erneut an, um diese Aktion durchzuführen';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Löschen: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<({bool success, String password})> _showReAuthPasswordDialog(
+      String email) async {
+    final passwordController = TextEditingController();
+    final moodTheme = ref.read(currentMoodThemeProvider);
+    bool success = false;
+    String password = '';
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: moodTheme.accentColor.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        title: Text(
+          'Erneute Anmeldung erforderlich',
+          style: AppTheme.headingStyle.copyWith(fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Um deinen Account zu löschen, musst du dich erneut anmelden.',
+              style: AppTheme.bodyStyle,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              style: AppTheme.bodyStyle,
+              decoration: InputDecoration(
+                labelText: 'Passwort',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                filled: true,
+                fillColor: Colors.grey[800],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: moodTheme.accentColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              password = passwordController.text;
+              if (password.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bitte gib dein Passwort ein'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                final authService = ref.read(authServiceProvider);
+                await authService.reauthenticateWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+                success = true;
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Falsches Passwort. Bitte versuche es erneut.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
+            child: const Text('Bestätigen'),
+          ),
+        ],
+      ),
+    );
+
+    passwordController.dispose();
+    return (success: success, password: password);
+  }
+
+  Future<void> _showEditDisplayNameDialog() async {
+    final moodTheme = ref.read(currentMoodThemeProvider);
+    final userPrefs = ref.read(userPrefsProvider);
+    final displayNameController =
+        TextEditingController(text: userPrefs.displayName ?? '');
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: moodTheme.accentColor.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        title: Text(
+          'Anzeigename ändern',
+          style: AppTheme.headingStyle.copyWith(fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Gib einen neuen Anzeigenamen ein:',
+              style: AppTheme.bodyStyle,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: displayNameController,
+              style: AppTheme.bodyStyle,
+              maxLength: 50,
+              decoration: InputDecoration(
+                labelText: 'Anzeigename',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                filled: true,
+                fillColor: Colors.grey[800],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: moodTheme.accentColor),
+                ),
+                counterText: '',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              // Dispose controller after dialog is closed
+              Future.microtask(() => displayNameController.dispose());
+              // Reopen profile dialog after a short delay to avoid widget lifecycle issues
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (mounted && context.mounted) {
+                  _showProfileDialog();
+                }
+              });
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newDisplayName = displayNameController.text.trim();
+              if (newDisplayName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bitte gib einen Namen ein'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              if (newDisplayName.length > 50) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Der Name darf maximal 50 Zeichen lang sein'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Get the value before async operations to avoid using disposed controller
+              final nameToSave = newDisplayName;
+              
+              try {
+                // Update in UserPrefs only (no Firebase update needed)
+                await ref
+                    .read(userPrefsProvider.notifier)
+                    .updateDisplayName(nameToSave);
+
+                // Close dialog - controller will be disposed in the .then() callback
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+
+                if (!mounted || !context.mounted) return;
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Anzeigename wurde erfolgreich geändert'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+
+                // Reopen profile dialog to show updated name immediately
+                // UserPrefs update is synchronous, so no delay needed
+                if (mounted && context.mounted) {
+                  try {
+                    _showProfileDialog();
+                  } catch (e) {
+                    debugPrint('Error reopening profile dialog: $e');
+                  }
+                }
+              } catch (e) {
+                debugPrint('Error updating display name: $e');
+                // Don't dispose controller on error, let user try again or close dialog manually
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Fehler beim Ändern: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
+            child: const Text('Speichern'),
+          ),
+        ],
+      );
+      },
+    ).then((_) {
+      // Ensure controller is disposed when dialog closes (regardless of how it was closed)
+      // Use microtask to ensure disposal happens after dialog is fully closed
+      Future.microtask(() {
+        try {
+          displayNameController.dispose();
+        } catch (e) {
+          // Controller already disposed, ignore
+          debugPrint('Controller already disposed: $e');
+        }
+      });
+    });
   }
 
   void _showSubscriptionDialog() {

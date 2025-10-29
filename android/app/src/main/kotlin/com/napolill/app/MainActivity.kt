@@ -1,4 +1,4 @@
-package com.example.napolill
+package com.napolill.app
 
 import io.flutter.embedding.android.FlutterActivity
 

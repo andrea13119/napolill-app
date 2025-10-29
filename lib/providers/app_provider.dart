@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_prefs.dart';
@@ -38,19 +39,53 @@ final userPrefsProvider = StateNotifierProvider<UserPrefsNotifier, UserPrefs>((
   return UserPrefsNotifier(storageService);
 });
 
+// Provider, der darauf wartet, dass die UserPrefs geladen sind
+final userPrefsLoadedProvider = FutureProvider<UserPrefs>((ref) async {
+  final notifier = ref.read(userPrefsProvider.notifier);
+  return await notifier.ensureLoaded();
+});
+
 class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   final StorageService _storageService;
+  Completer<UserPrefs>? _loadCompleter;
 
   UserPrefsNotifier(this._storageService) : super(UserPrefs()) {
     _loadUserPrefs();
   }
 
   Future<void> _loadUserPrefs() async {
-    final prefs = await _storageService.getUserPrefs();
-    state = prefs;
+    _loadCompleter = Completer<UserPrefs>();
+    try {
+      final prefs = await _storageService.getUserPrefs();
+      state = prefs;
 
-    // Initialize already earned badges for existing users
-    await initializeEarnedBadges();
+      // Initialize already earned badges for existing users
+      await initializeEarnedBadges();
+
+      // Signalisiere dass das Laden abgeschlossen ist
+      if (!_loadCompleter!.isCompleted) {
+        _loadCompleter!.complete(state);
+      }
+    } catch (e) {
+      if (!_loadCompleter!.isCompleted) {
+        _loadCompleter!.completeError(e);
+      }
+    }
+  }
+
+  /// Wartet darauf, dass die UserPrefs geladen sind
+  /// Gibt die geladenen UserPrefs zurück
+  Future<UserPrefs> ensureLoaded() async {
+    if (_loadCompleter == null) {
+      // Falls das Laden noch nicht gestartet wurde, starte es
+      _loadUserPrefs();
+    }
+    if (_loadCompleter!.isCompleted) {
+      // Falls bereits geladen, gib sofort zurück
+      return state;
+    }
+    // Warte auf das Laden
+    return await _loadCompleter!.future;
   }
 
   Future<void> updateDisplayName(String? displayName) async {
