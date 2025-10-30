@@ -19,6 +19,10 @@ class UserPrefs {
   final List<MoodEntry> moods;
   final String? profileImagePath; // Path to profile image
   final List<String> earnedBadgeIds; // List of earned badge IDs
+  // Sync settings
+  final bool syncEnabled; // Whether Firebase sync is enabled
+  final DateTime? lastSyncAt; // Last completed sync timestamp
+  final bool syncPromptShown; // Whether the first-run sync choice was shown
 
   UserPrefs({
     this.displayName,
@@ -36,6 +40,9 @@ class UserPrefs {
     this.moods = const [],
     this.profileImagePath,
     this.earnedBadgeIds = const [],
+    this.syncEnabled = false,
+    this.lastSyncAt,
+    this.syncPromptShown = false,
   });
 
   UserPrefs copyWith({
@@ -54,6 +61,9 @@ class UserPrefs {
     List<MoodEntry>? moods,
     Object? profileImagePath = _undefined,
     List<String>? earnedBadgeIds,
+    bool? syncEnabled,
+    Object? lastSyncAt = _undefined,
+    bool? syncPromptShown,
   }) {
     return UserPrefs(
       displayName: displayName ?? this.displayName,
@@ -74,6 +84,11 @@ class UserPrefs {
           ? this.profileImagePath
           : profileImagePath as String?,
       earnedBadgeIds: earnedBadgeIds ?? this.earnedBadgeIds,
+      syncEnabled: syncEnabled ?? this.syncEnabled,
+      lastSyncAt: lastSyncAt == _undefined
+          ? this.lastSyncAt
+          : lastSyncAt as DateTime?,
+      syncPromptShown: syncPromptShown ?? this.syncPromptShown,
     );
   }
 
@@ -94,6 +109,9 @@ class UserPrefs {
       'moods': moods.map((m) => m.toJson()).toList(),
       'profileImagePath': profileImagePath,
       'earnedBadgeIds': earnedBadgeIds,
+      'syncEnabled': syncEnabled,
+      'lastSyncAt': lastSyncAt?.toIso8601String(),
+      'syncPromptShown': syncPromptShown,
     };
   }
 
@@ -125,6 +143,11 @@ class UserPrefs {
               ?.map((id) => id.toString())
               .toList() ??
           [],
+      syncEnabled: json['syncEnabled'] ?? false,
+      lastSyncAt: json['lastSyncAt'] != null
+          ? DateTime.parse(json['lastSyncAt'])
+          : null,
+      syncPromptShown: json['syncPromptShown'] ?? false,
     );
   }
 

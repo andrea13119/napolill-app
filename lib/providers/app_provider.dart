@@ -123,6 +123,28 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
     await _storageService.saveUserPrefs(state);
   }
 
+  // Sync settings updates
+  Future<void> updateSyncEnabled(bool enabled) async {
+    state = state.copyWith(syncEnabled: enabled);
+    await _storageService.saveUserPrefs(state);
+  }
+
+  Future<void> updateLastSyncAt(DateTime? lastSyncAt) async {
+    state = state.copyWith(lastSyncAt: lastSyncAt);
+    await _storageService.saveUserPrefs(state);
+  }
+
+  // Replace entire prefs (used for cloud merge)
+  Future<void> replaceAll(UserPrefs newPrefs) async {
+    state = newPrefs;
+    await _storageService.saveUserPrefs(state);
+  }
+
+  Future<void> setSyncPromptShown() async {
+    state = state.copyWith(syncPromptShown: true);
+    await _storageService.saveUserPrefs(state);
+  }
+
   Future<void> addMood(MoodEntry mood) async {
     final updatedMoods = List<MoodEntry>.from(state.moods);
     // Remove existing mood for the same date

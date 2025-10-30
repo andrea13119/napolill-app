@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_prefs.dart';
+import '../services/sync_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/mood_theme.dart';
 import 'home_screen.dart';
@@ -248,7 +249,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSettingItem(
               icon: Icons.cloud_sync,
               title: 'Synchronisation',
-              subtitle: 'Lokal gespeichert',
+              subtitle: ref.watch(userPrefsProvider).syncEnabled
+                  ? 'Mit Firebase synchronisiert'
+                  : 'Lokal gespeichert',
               onTap: _showSyncDialog,
             ),
           ],
@@ -1695,33 +1698,98 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showSyncDialog() {
     final moodTheme = ref.read(currentMoodThemeProvider);
+    final userPrefs = ref.read(userPrefsProvider);
+    bool enabled = userPrefs.syncEnabled;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: moodTheme.cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: moodTheme.accentColor.withValues(alpha: 0.3),
-            width: 2,
-          ),
-        ),
-        title: Text(
-          'Synchronisation',
-          style: AppTheme.headingStyle.copyWith(fontSize: 18),
-        ),
-        content: Text(
-          'Deine Daten werden lokal gespeichert. Cloud-Synchronisation wird später implementiert.',
-          style: AppTheme.bodyStyle,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
-            child: const Text('OK'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: moodTheme.cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: moodTheme.accentColor.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            title: Text(
+              'Synchronisation',
+              style: AppTheme.headingStyle.copyWith(fontSize: 18),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RadioListTile<bool>(
+                  value: false,
+                  groupValue: enabled,
+                  onChanged: (v) => setState(() => enabled = v ?? false),
+                  title: const Text('Nur lokal speichern'),
+                  subtitle: const Text(
+                    'Keine Datenübertragung, offline nutzbar',
+                  ),
+                ),
+                RadioListTile<bool>(
+                  value: true,
+                  groupValue: enabled,
+                  onChanged: (v) => setState(() => enabled = v ?? true),
+                  title: const Text('Mit Firebase synchronisieren'),
+                  subtitle: const Text('Daten zwischen Geräten abgleichen'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+                child: const Text('Abbrechen'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await ref
+                      .read(userPrefsProvider.notifier)
+                      .updateSyncEnabled(enabled);
+                  if (enabled) {
+                    await ref.read(syncServiceProvider).syncFromCloudDelta();
+                  }
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        enabled
+                            ? 'Firebase-Synchronisation aktiviert'
+                            : 'Nur lokale Speicherung aktiviert',
+                      ),
+                      backgroundColor: enabled ? Colors.green : Colors.orange,
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: moodTheme.accentColor,
+                ),
+                child: const Text('Speichern'),
+              ),
+              if (enabled)
+                TextButton(
+                  onPressed: () async {
+                    await ref.read(syncServiceProvider).syncFromCloudDelta();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Synchronisation gestartet'),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  },
+                  child: const Text('Jetzt synchronisieren'),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
