@@ -1376,10 +1376,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           errorMessage = e.message!;
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -1401,7 +1398,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<({bool success, String password})> _showReAuthPasswordDialog(
-      String email) async {
+    String email,
+  ) async {
     final passwordController = TextEditingController();
     final moodTheme = ref.read(currentMoodThemeProvider);
     bool success = false;
@@ -1492,7 +1490,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                        'Falsches Passwort. Bitte versuche es erneut.'),
+                      'Falsches Passwort. Bitte versuche es erneut.',
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -1512,162 +1511,152 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _showEditDisplayNameDialog() async {
     final moodTheme = ref.read(currentMoodThemeProvider);
     final userPrefs = ref.read(userPrefsProvider);
-    final displayNameController =
-        TextEditingController(text: userPrefs.displayName ?? '');
+    final displayNameController = TextEditingController(
+      text: userPrefs.displayName ?? '',
+    );
+    bool reopenProfile = false; // signal to reopen profile after dialog closes
 
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-        backgroundColor: moodTheme.cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: moodTheme.accentColor.withValues(alpha: 0.3),
-            width: 2,
-          ),
-        ),
-        title: Text(
-          'Anzeigename ändern',
-          style: AppTheme.headingStyle.copyWith(fontSize: 18),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Gib einen neuen Anzeigenamen ein:',
-              style: AppTheme.bodyStyle,
+          backgroundColor: moodTheme.cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: moodTheme.accentColor.withValues(alpha: 0.3),
+              width: 2,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: displayNameController,
-              style: AppTheme.bodyStyle,
-              maxLength: 50,
-              decoration: InputDecoration(
-                labelText: 'Anzeigename',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: moodTheme.accentColor),
-                ),
-                counterText: '',
+          ),
+          title: Text(
+            'Anzeigename ändern',
+            style: AppTheme.headingStyle.copyWith(fontSize: 18),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gib einen neuen Anzeigenamen ein:',
+                style: AppTheme.bodyStyle,
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: displayNameController,
+                style: AppTheme.bodyStyle,
+                maxLength: 50,
+                decoration: InputDecoration(
+                  labelText: 'Anzeigename',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: Colors.grey[800],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[600]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[600]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: moodTheme.accentColor),
+                  ),
+                  counterText: '',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (!context.mounted) return;
+                reopenProfile = true;
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+              child: const Text('Abbrechen'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final newDisplayName = displayNameController.text.trim();
+                if (newDisplayName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Bitte gib einen Namen ein'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                if (newDisplayName.length > 50) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Der Name darf maximal 50 Zeichen lang sein',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Get the value before async operations to avoid using disposed controller
+                final nameToSave = newDisplayName;
+
+                try {
+                  // Update in UserPrefs only (no Firebase update needed)
+                  await ref
+                      .read(userPrefsProvider.notifier)
+                      .updateDisplayName(nameToSave);
+
+                  // Close dialog - controller will be disposed in the .then() callback
+                  if (!context.mounted) return;
+                  reopenProfile = true;
+                  Navigator.of(context).pop();
+
+                  if (!mounted || !context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Anzeigename wurde erfolgreich geändert'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint('Error updating display name: $e');
+                  // Don't dispose controller on error, let user try again or close dialog manually
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Fehler beim Ändern: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: moodTheme.accentColor,
+              ),
+              child: const Text('Speichern'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (!context.mounted) return;
-              Navigator.of(context).pop();
-              // Dispose controller after dialog is closed
-              Future.microtask(() => displayNameController.dispose());
-              // Reopen profile dialog after a short delay to avoid widget lifecycle issues
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted && context.mounted) {
-                  _showProfileDialog();
-                }
-              });
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newDisplayName = displayNameController.text.trim();
-              if (newDisplayName.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Bitte gib einen Namen ein'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              if (newDisplayName.length > 50) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Der Name darf maximal 50 Zeichen lang sein'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Get the value before async operations to avoid using disposed controller
-              final nameToSave = newDisplayName;
-              
-              try {
-                // Update in UserPrefs only (no Firebase update needed)
-                await ref
-                    .read(userPrefsProvider.notifier)
-                    .updateDisplayName(nameToSave);
-
-                // Close dialog - controller will be disposed in the .then() callback
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
-
-                if (!mounted || !context.mounted) return;
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Anzeigename wurde erfolgreich geändert'),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                // Reopen profile dialog to show updated name immediately
-                // UserPrefs update is synchronous, so no delay needed
-                if (mounted && context.mounted) {
-                  try {
-                    _showProfileDialog();
-                  } catch (e) {
-                    debugPrint('Error reopening profile dialog: $e');
-                  }
-                }
-              } catch (e) {
-                debugPrint('Error updating display name: $e');
-                // Don't dispose controller on error, let user try again or close dialog manually
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Fehler beim Ändern: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
-            child: const Text('Speichern'),
-          ),
-        ],
-      );
+        );
       },
     ).then((_) {
-      // Ensure controller is disposed when dialog closes (regardless of how it was closed)
-      // Use microtask to ensure disposal happens after dialog is fully closed
-      Future.microtask(() {
-        try {
-          displayNameController.dispose();
-        } catch (e) {
-          // Controller already disposed, ignore
-          debugPrint('Controller already disposed: $e');
-        }
-      });
+      // Do not dispose the controller here to avoid rebuilds during pop using a disposed instance
+      // Reopen profile dialog only after full close and next frame
+      // Optionally reopen profile dialog only after full close and next frame
+      if (reopenProfile && mounted && context.mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && context.mounted) {
+            _showProfileDialog();
+          }
+        });
+      }
     });
   }
 
