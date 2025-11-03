@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -60,28 +61,70 @@ class SyncBootstrapper extends ConsumerStatefulWidget {
 }
 
 class _SyncBootstrapperState extends ConsumerState<SyncBootstrapper> {
+  String? _syncedUserId; // Track which user we've already synced
+
   @override
   void initState() {
     super.initState();
-    _runInitialSync();
-    // Also run after login changes
-    ref.listen(currentUserProvider, (_, __) {
-      _runInitialSync();
+    // Check initial auth state after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser != null && _syncedUserId != currentUser.uid) {
+        debugPrint(
+          '_SyncBootstrapper: Initial user detected in initState (uid: ${currentUser.uid})',
+        );
+        _runInitialSync();
+      }
     });
   }
 
   Future<void> _runInitialSync() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      debugPrint('_runInitialSync: User is null, skipping');
+      return;
+    }
+
+    // Prevent multiple syncs for same user
+    if (_syncedUserId != null && _syncedUserId == user.uid) {
+      debugPrint(
+        '_runInitialSync: Already synced for this user, skipping (uid: ${user.uid})',
+      );
+      return;
+    }
+
+    debugPrint('_runInitialSync: Starting sync for user ${user.uid}');
     try {
       await ref.read(syncServiceProvider).syncFromCloudDelta();
+      final prefs = ref.read(userPrefsProvider);
+      debugPrint(
+        '_runInitialSync: After pull, syncEnabled=${prefs.syncEnabled}',
+      );
+
+      _syncedUserId = user.uid;
+
+      if (prefs.syncEnabled) {
+        debugPrint('_runInitialSync: syncEnabled is true, skipping popup');
+        return;
+      }
+
+      debugPrint('_runInitialSync: syncEnabled is false, checking for popup');
       WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowPrompt());
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Initial sync failed: $e');
+      _syncedUserId = user.uid;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowPrompt());
+    }
   }
 
   Future<void> _maybeShowPrompt() async {
-    final prefs = ref.read(userPrefsProvider);
     final user = ref.read(currentUserProvider);
     if (user == null) return;
-    if (prefs.syncPromptShown) return;
+
+    final shouldShow = await ref
+        .read(syncServiceProvider)
+        .shouldShowSyncPrompt();
+    if (!shouldShow) return;
 
     final enabled = await showDialog<bool>(
       context: context,
@@ -105,12 +148,39 @@ class _SyncBootstrapperState extends ConsumerState<SyncBootstrapper> {
     );
 
     await ref.read(userPrefsProvider.notifier).setSyncPromptShown();
+
     if (enabled == true) {
       await ref.read(userPrefsProvider.notifier).updateSyncEnabled(true);
+      await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
       await ref.read(syncServiceProvider).syncFromCloudDelta();
+    } else {
+      await ref.read(userPrefsProvider.notifier).updateSyncEnabled(false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    // Watch auth state and trigger sync when user logs in
+    ref.listen(authStateProvider, (previous, next) {
+      debugPrint(
+        '_SyncBootstrapper: listen() called - previous=${previous?.value?.uid}, next.hasValue=${next.hasValue}, next.value=${next.value?.uid}',
+      );
+
+      if (!next.hasValue) return;
+
+      final nextUser = next.value;
+      final previousUser = (previous?.hasValue == true)
+          ? previous!.value
+          : null;
+
+      if (nextUser != null && previousUser?.uid != nextUser.uid) {
+        debugPrint(
+          '_SyncBootstrapper: User changed via listen, triggering sync (previous: ${previousUser?.uid}, next: ${nextUser.uid})',
+        );
+        _runInitialSync();
+      }
+    });
+
+    return widget.child;
+  }
 }

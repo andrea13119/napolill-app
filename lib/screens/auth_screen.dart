@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
+import '../providers/app_provider.dart';
+import '../services/sync_service.dart';
 import '../utils/mood_theme.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
@@ -19,6 +21,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _displayNameController = TextEditingController();
   bool _isSignUp = false;
   bool _isLoading = false;
+  bool _isSyncing = false;
   String? _errorMessage;
 
   @override
@@ -59,9 +62,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         isNewUser = true;
         // Update display name if provided
         if (_displayNameController.text.trim().isNotEmpty) {
-          await authService.updateDisplayName(
-            _displayNameController.text.trim(),
-          );
+          final displayName = _displayNameController.text.trim();
+          await authService.updateDisplayName(displayName);
+          // Also save to UserPrefs so it gets synced
+          await ref.read(userPrefsProvider.notifier).updateDisplayName(displayName);
         }
       } else {
         await authService.signInWithEmailAndPassword(
@@ -70,6 +74,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
         // Existing user signed in
         isNewUser = false;
+      }
+
+      // For existing users, perform cloud sync before navigation
+      if (!isNewUser && mounted) {
+        setState(() {
+          _isSyncing = true;
+        });
+        
+        try {
+          debugPrint('AuthScreen: Performing cloud sync after login');
+          await ref.read(syncServiceProvider).syncFromCloudDelta();
+          debugPrint('AuthScreen: Cloud sync completed');
+        } catch (e) {
+          debugPrint('AuthScreen: Cloud sync failed: $e');
+          // Continue even if sync fails
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isSyncing = false;
+            });
+          }
+        }
       }
 
       if (mounted) {
@@ -124,6 +150,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   .inSeconds ??
               999) <
           5;
+
+      // For existing users, perform cloud sync before navigation
+      if (!isNewUser && mounted) {
+        setState(() {
+          _isSyncing = true;
+        });
+        
+        try {
+          debugPrint('AuthScreen: Performing cloud sync after Google login');
+          await ref.read(syncServiceProvider).syncFromCloudDelta();
+          debugPrint('AuthScreen: Cloud sync completed');
+        } catch (e) {
+          debugPrint('AuthScreen: Cloud sync failed: $e');
+          // Continue even if sync fails
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isSyncing = false;
+            });
+          }
+        }
+      }
 
       if (mounted) {
         // Navigate based on whether user is new or existing
@@ -290,13 +338,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                       ),
                       child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                if (_isSyncing) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Daten werden synchronisiert...',
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             )
                           : Text(
                               _isSignUp ? 'Konto erstellen' : 'Anmelden',
