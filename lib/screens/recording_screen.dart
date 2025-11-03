@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' as just_audio;
 import '../providers/app_provider.dart';
@@ -405,6 +406,13 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
         }
       }
 
+      debugPrint('=== DRAFT SAVE DEBUG ===');
+      debugPrint('Current index: $_currentIndex');
+      debugPrint('Affirmations length: $affirmationsLength');
+      debugPrint('Calculated nextUnrecordedIndex: $nextUnrecordedIndex');
+      debugPrint('Take status: ${_takeStatus.entries.where((e) => e.value == true).map((e) => e.key).toList()}');
+      debugPrint('Recorded takes count: ${recordedTakesList.where((t) => t.isNotEmpty).length}');
+
       final draftState = DraftState(
         entryId: entryId,
         title:
@@ -422,6 +430,8 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
         updatedAt: DateTime.now(),
         recordedTakes: recordedTakesList, // Add recorded takes
       );
+      
+      debugPrint('DraftState created with nextIndex: ${draftState.nextIndex}');
 
       // Debug logging
       debugPrint('Saving draft with category: ${draftState.category}');
@@ -431,6 +441,8 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
 
       // Save draft
       await ref.read(draftStatesProvider.notifier).addDraft(draftState);
+      // Push drafts to cloud if sync enabled
+      await ref.read(syncServiceProvider).pushDraftStates();
 
       // Show confirmation dialog
       if (mounted) {
@@ -656,6 +668,13 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
       }
     }
 
+    debugPrint('=== FINISH RECORDING DEBUG ===');
+    debugPrint('Current index: $_currentIndex');
+    debugPrint('Affirmations length: $affirmationsLength');
+    debugPrint('Calculated nextUnrecordedIndex: $nextUnrecordedIndex');
+    debugPrint('Take status: ${_takeStatus.entries.where((e) => e.value == true).map((e) => e.key).toList()}');
+    debugPrint('Recorded takes count: ${recordedTakesList.where((t) => t.isNotEmpty).length}');
+
     final draftState = DraftState(
       entryId: entryId,
       title:
@@ -673,6 +692,8 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
       updatedAt: DateTime.now(),
       recordedTakes: recordedTakesList, // Add recorded takes
     );
+
+    debugPrint('DraftState created for music selection with nextIndex: ${draftState.nextIndex}');
 
     // Save draft
     ref

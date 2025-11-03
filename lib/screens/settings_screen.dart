@@ -1615,6 +1615,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       .read(userPrefsProvider.notifier)
                       .updateDisplayName(nameToSave);
 
+                  // Push prefs immediately so displayName is reflected in Firestore
+                  await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
+
                   // Close dialog - controller will be disposed in the .then() callback
                   if (!context.mounted) return;
                   reopenProfile = true;
@@ -1751,8 +1754,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   await ref
                       .read(userPrefsProvider.notifier)
                       .updateSyncEnabled(enabled);
+                  // Push user_prefs immediately so Cloud reflects new choice
+                  await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
                   if (enabled) {
-                    await ref.read(syncServiceProvider).syncFromCloudDelta();
+                    // Kein Sofort-Pull nötig – passiert beim App-Start/Login
                   }
                   if (!context.mounted) return;
                   Navigator.of(context).pop();
@@ -1776,7 +1781,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (enabled)
                 TextButton(
                   onPressed: () async {
-                    await ref.read(syncServiceProvider).syncFromCloudDelta();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1784,9 +1788,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         backgroundColor: Colors.blue,
                       ),
                     );
+                    await ref.read(syncServiceProvider).syncFromCloudDelta();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Synchronisation abgeschlossen'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   },
                   child: const Text('Jetzt synchronisieren'),
                 ),
+              TextButton(
+                onPressed: () async {
+                  // Full push + pull
+                  await ref.read(syncServiceProvider).pushAll();
+                  await ref.read(syncServiceProvider).syncFromCloudDelta();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Alles synchronisiert'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                child: const Text('Alles synchronisieren'),
+              ),
             ],
           );
         },

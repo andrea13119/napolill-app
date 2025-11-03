@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/sync_service.dart';
 import '../providers/navigation_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
@@ -35,6 +37,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .setCurrentIndex(widget.initialTabIndex!);
       });
     }
+    // Show sync prompt on first arrival to Home
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowSyncPrompt());
   }
 
   @override
@@ -61,6 +65,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onTap: _onNavigationTap,
       ),
     );
+  }
+
+  Future<void> _maybeShowSyncPrompt() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    // Check both local and cloud (via shouldShowSyncPrompt)
+    final shouldShow = await ref.read(syncServiceProvider).shouldShowSyncPrompt();
+    if (!shouldShow) return;
+
+    final enabled = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Daten synchronisieren?'),
+        content: const Text(
+          'Möchtest du deine Daten (Aufnahmen, Entwürfe, Stimmungen, Aktivitäten, Einstellungen) sicher in der Cloud speichern und auf mehreren Geräten nutzen?\n\n'
+          '• Synchronisation setzt eine Anmeldung voraus.\n'
+          '• Du kannst die Option jederzeit in Einstellungen → Synchronisation ändern.\n\n'
+          'Wenn du „Nur lokal“ wählst, bleiben alle Daten ausschließlich auf diesem Gerät.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Nur lokal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Synchronisieren'),
+          ),
+        ],
+      ),
+    );
+
+    // Set syncPromptShown: true (locally)
+    await ref.read(userPrefsProvider.notifier).setSyncPromptShown();
+    
+    if (enabled == true) {
+      // User chose "Synchronisieren"
+      await ref.read(userPrefsProvider.notifier).updateSyncEnabled(true);
+      // Push user_prefs immediately so Cloud reflects the decision (including syncPromptShown: true)
+      await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
+      // Then pull cloud data (delta sync) to get any missing data
+      await ref.read(syncServiceProvider).syncFromCloudDelta();
+    } else {
+      // User chose "Nur lokal" - set syncEnabled: false locally
+      await ref.read(userPrefsProvider.notifier).updateSyncEnabled(false);
+      // syncPromptShown is already set locally above
+      // Don't push to cloud if sync is disabled (no need to sync when user chose local only)
+    }
   }
 
   Widget _getCurrentScreen(AsyncValue<Map<String, dynamic>> statistics) {

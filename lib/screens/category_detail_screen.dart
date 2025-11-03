@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_provider.dart';
 import '../models/entry.dart';
@@ -1059,6 +1060,8 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       await ref
           .read(draftStatesProvider.notifier)
           .saveDraftState(updatedDraft.entryId, updatedDraft);
+      // Push drafts to cloud if sync enabled
+      await ref.read(syncServiceProvider).pushDraftStates();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1093,6 +1096,8 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       await ref
           .read(draftStatesProvider.notifier)
           .deleteDraftState(draft.entryId);
+      // Push drafts to cloud if sync enabled
+      await ref.read(syncServiceProvider).pushDraftStates();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

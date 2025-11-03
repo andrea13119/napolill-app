@@ -4,6 +4,7 @@ import '../providers/app_provider.dart';
 import '../models/user_prefs.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../services/sync_service.dart';
 
 class MoodCheck extends ConsumerStatefulWidget {
   const MoodCheck({super.key});
@@ -60,7 +61,7 @@ class _MoodCheckState extends ConsumerState<MoodCheck> {
     }
   }
 
-  void _selectMood(String mood) {
+  Future<void> _selectMood(String mood) async {
     setState(() {
       // Toggle: Wenn das gleiche Mood nochmal angeklickt wird, deselektieren
       if (_selectedMood == mood) {
@@ -72,9 +73,12 @@ class _MoodCheckState extends ConsumerState<MoodCheck> {
 
     // Save mood (leerer String wenn deselektiert)
     final today = DateTime.now();
-    ref
+    await ref
         .read(userPrefsProvider.notifier)
         .addMood(MoodEntry(date: today, mood: _selectedMood ?? ''));
+
+    // Trigger sync to Firebase
+    await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
 
     // Invalidate mood statistics to refresh the mood overview immediately
     ref.invalidate(moodStatisticsProvider);

@@ -91,6 +91,7 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   Future<void> updateDisplayName(String? displayName) async {
     state = state.copyWith(displayName: displayName);
     await _storageService.saveUserPrefs(state);
+    // Note: Caller should trigger pushUserPrefsIfEnabled after this
   }
 
   Future<void> updateSelectedTopic(String topic) async {
@@ -187,6 +188,7 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   Future<void> updateProfileImage(String? imagePath) async {
     state = state.copyWith(profileImagePath: imagePath);
     await _storageService.saveUserPrefs(state);
+    // Note: Caller should trigger profile image sync after this
   }
 
   Future<void> updateDefaultBackgroundVolume(double volume) async {

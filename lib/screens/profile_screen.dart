@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../providers/app_provider.dart';
 import '../models/user_prefs.dart';
+import '../services/sync_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
@@ -1866,6 +1867,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .read(userPrefsProvider.notifier)
           .updateProfileImage(savedImagePath);
 
+      // Trigger sync to Firebase
+      await ref.read(syncServiceProvider).pushProfileImage();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1901,6 +1905,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       // Update user prefs
       await ref.read(userPrefsProvider.notifier).updateProfileImage(null);
+
+      // Trigger sync to Firebase (remove from cloud)
+      await ref.read(syncServiceProvider).pushProfileImage();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

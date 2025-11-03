@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' as just_audio;
 import '../utils/app_theme.dart';
@@ -981,6 +982,9 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
       // Save entry to database
       await ref.read(entriesProvider.notifier).addEntry(entry);
 
+      // Trigger cloud push for entries if sync enabled
+      await ref.read(syncServiceProvider).pushEntries();
+
       // Refresh statistics to trigger badge notifications
       await ref.read(statisticsNotifierProvider.notifier).refreshStatistics();
 
@@ -997,6 +1001,8 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
       // Delete draft if it exists (since entry is now completed)
       if (widget.draftState != null) {
         await ref.read(draftStatesProvider.notifier).deleteDraftState(entryId);
+        // Push updated drafts state to cloud
+        await ref.read(syncServiceProvider).pushDraftStates();
       }
 
       // Show success message
