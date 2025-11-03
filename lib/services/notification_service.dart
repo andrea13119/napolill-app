@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -81,37 +82,50 @@ class NotificationService {
       return;
     }
 
-    // Cancel existing notifications
-    await cancelAllNotifications();
+    try {
+      // Cancel existing notifications
+      await cancelAllNotifications();
 
-    // Schedule daily notification
-    await _notifications.zonedSchedule(
-      0, // Unique ID
-      title,
-      body,
-      _nextInstanceOfTime(hour, minute),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'napolill_daily',
-          'Napolill Daily Reminders',
-          channelDescription: 'Tägliche Erinnerungen für Napolill',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/launcher_icon',
+      // Schedule daily notification
+      await _notifications.zonedSchedule(
+        0, // Unique ID
+        title,
+        body,
+        _nextInstanceOfTime(hour, minute),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'napolill_daily',
+            'Napolill Daily Reminders',
+            channelDescription: 'Tägliche Erinnerungen für Napolill',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/launcher_icon',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exact,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.exact,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
 
-    debugPrint('Daily reminder scheduled for $hour:$minute');
+      debugPrint('Daily reminder scheduled for $hour:$minute');
+    } on PlatformException catch (e) {
+      if (e.code == 'exact_alarms_not_permitted') {
+        debugPrint('Exact alarms not permitted. User needs to enable it in system settings.');
+        rethrow; // Rethrow so caller can handle it
+      } else {
+        debugPrint('Error scheduling notification: ${e.message}');
+        rethrow;
+      }
+    } catch (e) {
+      debugPrint('Unexpected error scheduling notification: $e');
+      rethrow;
+    }
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {

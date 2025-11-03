@@ -21,7 +21,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _vibrationEnabled = true;
-  bool _notificationsEnabled = true;
   double _defaultBackgroundVolume = 0.5;
   double? _deviceTemperature;
   String? _temperatureColor;
@@ -39,7 +38,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userPrefs = ref.read(userPrefsProvider);
     setState(() {
       _vibrationEnabled = userPrefs.vibrationEnabled ?? true;
-      _notificationsEnabled = userPrefs.pushAllowed;
       _defaultBackgroundVolume = userPrefs.defaultBackgroundVolume ?? 0.5;
     });
   }
@@ -262,6 +260,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildAppSettingsSection() {
     final moodTheme = ref.watch(currentMoodThemeProvider);
+    final userPrefs = ref.watch(userPrefsProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -336,6 +335,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // Notifications
             _buildNotificationItem(),
+
+            // Notification Time (only show if notifications are enabled)
+            if (userPrefs.pushAllowed) _buildNotificationTimeItem(),
 
             // Temperature
             _buildTemperatureItem(),
@@ -626,6 +628,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildNotificationItem() {
     final moodTheme = ref.watch(currentMoodThemeProvider);
+    final userPrefs = ref.watch(userPrefsProvider);
 
     return ListTile(
       leading: Container(
@@ -649,20 +652,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       subtitle: Text(
-        _notificationsEnabled ? 'Aktiviert' : 'Deaktiviert',
+        userPrefs.pushAllowed ? 'Aktiviert' : 'Deaktiviert',
         style: AppTheme.bodyStyle.copyWith(
-          color: _notificationsEnabled
+          color: userPrefs.pushAllowed
               ? moodTheme.accentColor
               : Colors.grey[400],
           fontSize: 12,
         ),
       ),
       trailing: Switch(
-        value: _notificationsEnabled,
+        value: userPrefs.pushAllowed,
         onChanged: _handleNotificationToggle,
         activeThumbColor: moodTheme.accentColor,
         activeTrackColor: moodTheme.accentColor.withValues(alpha: 0.5),
       ),
+    );
+  }
+
+  Widget _buildNotificationTimeItem() {
+    final moodTheme = ref.watch(currentMoodThemeProvider);
+    final userPrefs = ref.watch(userPrefsProvider);
+
+    String formatTime(int hour, int minute) {
+      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} Uhr';
+    }
+
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: moodTheme.accentColor.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.access_time, color: moodTheme.accentColor, size: 20),
+      ),
+      title: Text(
+        'Erinnerungszeit',
+        style: AppTheme.bodyStyle.copyWith(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+      subtitle: Text(
+        formatTime(userPrefs.notificationHour, userPrefs.notificationMinute),
+        style: AppTheme.bodyStyle.copyWith(
+          color: moodTheme.accentColor,
+          fontSize: 12,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: moodTheme.accentColor.withValues(alpha: 0.6),
+      ),
+      onTap: () => _showNotificationTimePicker(),
     );
   }
 
@@ -1885,28 +1928,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _handleNotificationToggle(bool value) async {
     try {
       final deviceService = ref.read(deviceServiceProvider);
+      final notificationService = ref.read(notificationServiceProvider);
 
       if (value) {
         // Enable notifications - request permission
         final hasPermission = await deviceService
             .requestNotificationPermission();
-        setState(() {
-          _notificationsEnabled = hasPermission;
-        });
 
         if (hasPermission) {
-          ref.read(userPrefsProvider.notifier).updatePushAllowed(true);
+          await ref.read(userPrefsProvider.notifier).updatePushAllowed(true);
+
+          // Schedule daily reminder with saved time
+          final userPrefs = ref.read(userPrefsProvider);
+          await notificationService.scheduleDailyReminder(
+            hour: userPrefs.notificationHour,
+            minute: userPrefs.notificationMinute,
+            title: 'Napolill Erinnerung',
+            body: 'Zeit für deine tägliche Affirmation! 🌟',
+          );
         } else {
           // Show dialog to go to settings
           _showNotificationPermissionDialog();
         }
       } else {
-        // Disable notifications - open app settings
-        await deviceService.openDeviceSettings();
-        setState(() {
-          _notificationsEnabled = false;
-        });
-        ref.read(userPrefsProvider.notifier).updatePushAllowed(false);
+        // Disable notifications - cancel scheduled reminders
+        await notificationService.cancelAllNotifications();
+        await ref.read(userPrefsProvider.notifier).updatePushAllowed(false);
       }
     } catch (e) {
       debugPrint('Error handling notification toggle: $e');
@@ -1953,6 +2000,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showNotificationTimePicker() async {
+    final moodTheme = ref.read(currentMoodThemeProvider);
+    final userPrefs = ref.read(userPrefsProvider);
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: userPrefs.notificationHour,
+        minute: userPrefs.notificationMinute,
+      ),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: moodTheme.accentColor,
+              onPrimary: Colors.white,
+              surface: moodTheme.cardColor,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      // Update notification time in preferences
+      await ref
+          .read(userPrefsProvider.notifier)
+          .updateNotificationTime(picked.hour, picked.minute);
+
+      // Reschedule daily reminder with new time if notifications are enabled
+      final notificationService = ref.read(notificationServiceProvider);
+      await notificationService.scheduleDailyReminder(
+        hour: picked.hour,
+        minute: picked.minute,
+        title: 'Napolill Erinnerung',
+        body: 'Zeit für deine tägliche Affirmation! 🌟',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erinnerungszeit auf ${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')} Uhr geändert',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _showAccountInfoDialog() {

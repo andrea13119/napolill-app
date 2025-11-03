@@ -12,6 +12,7 @@ class OnboardingPage extends StatefulWidget {
   final VoidCallback? onPrevious;
   final Future<void> Function()? onSkip;
   final Future<void> Function(bool)? onPushNotificationChoice;
+  final Future<void> Function(int hour, int minute)? onNotificationTimeSelected;
   final Function(bool)? onCheckboxStateChanged;
   final bool? initialCheckboxState;
 
@@ -22,6 +23,7 @@ class OnboardingPage extends StatefulWidget {
     this.onPrevious,
     this.onSkip,
     this.onPushNotificationChoice,
+    this.onNotificationTimeSelected,
     this.onCheckboxStateChanged,
     this.initialCheckboxState,
   });
@@ -33,6 +35,8 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final List<bool> _checkboxStates = [];
   bool _singleCheckboxState = false;
+  int? _selectedNotificationHour;
+  int? _selectedNotificationMinute;
 
   @override
   void initState() {
@@ -185,6 +189,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
           _checkboxStates.every((state) => state);
     }
     if (widget.data.showCheckbox) {
+      // If notification times are shown and checkbox is checked, require time selection
+      if (widget.data.showNotificationTimes && _singleCheckboxState) {
+        return _selectedNotificationHour != null && _selectedNotificationMinute != null;
+      }
       return _singleCheckboxState;
     }
     return true;
@@ -328,6 +336,93 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           ],
                         ),
                       ],
+
+                      // Notification Time Selection
+                      if (widget.data.showNotificationTimes &&
+                          widget.data.notificationTimes.isNotEmpty &&
+                          _singleCheckboxState) ...[
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: MoodTheme.standard.cardColor.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: MoodTheme.standard.accentColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Erinnerungszeit wählen:',
+                                style: AppTheme.bodyStyle.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ...widget.data.notificationTimes.map((time) {
+                                final hour = time['hour'] as int;
+                                final minute = time['minute'] as int;
+                                final label = time['label'] as String?;
+                                final isSelected = _selectedNotificationHour == hour && 
+                                                   _selectedNotificationMinute == minute;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: InkWell(
+                                    onTap: () async {
+                                      setState(() {
+                                        _selectedNotificationHour = hour;
+                                        _selectedNotificationMinute = minute;
+                                      });
+                                      if (widget.onNotificationTimeSelected != null) {
+                                        await widget.onNotificationTimeSelected!(hour, minute);
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? MoodTheme.standard.accentColor.withValues(alpha: 0.3)
+                                            : MoodTheme.standard.accentColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? MoodTheme.standard.accentColor
+                                              : MoodTheme.standard.accentColor.withValues(alpha: 0.3),
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            isSelected ? Icons.check_circle : Icons.access_time,
+                                            color: MoodTheme.standard.accentColor,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              label ?? '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} Uhr',
+                                              style: AppTheme.bodyStyle.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -378,11 +473,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         child: ElevatedButton(
                           onPressed: _canProceed
                               ? () async {
-                                  // Handle push notification choice in background
+                                  // Handle push notification choice and WAIT for completion
                                   if (widget.onPushNotificationChoice != null) {
-                                    widget.onPushNotificationChoice!(true);
+                                    await widget.onPushNotificationChoice!(true);
                                   }
-                                  // Navigate to next page immediately
+                                  // Navigate to next page AFTER handling is complete
                                   if (widget.onNext != null) {
                                     widget.onNext!();
                                   }
@@ -487,6 +582,8 @@ class OnboardingPageData {
   final List<String> checkboxes;
   final bool showCheckbox;
   final String? checkboxText;
+  final bool showNotificationTimes;
+  final List<Map<String, dynamic>> notificationTimes;
 
   OnboardingPageData({
     required this.title,
@@ -499,5 +596,7 @@ class OnboardingPageData {
     this.checkboxes = const [],
     this.showCheckbox = false,
     this.checkboxText,
+    this.showNotificationTimes = false,
+    this.notificationTimes = const [],
   });
 }

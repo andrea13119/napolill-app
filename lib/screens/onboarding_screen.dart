@@ -88,6 +88,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       showCheckbox: true,
       checkboxText:
           'JA, ICH MÖCHTE TÄGLICH ERINNERT WERDEN. (DIESE EINSTELLUNG KANN SPÄTER IM MENÜ GEÄNDERT WERDEN.)',
+      showNotificationTimes: true,
+      notificationTimes: [
+        {'hour': 9, 'minute': 0, 'label': 'Morgen (09:00 Uhr)'},
+        {'hour': 12, 'minute': 0, 'label': 'Mittag (12:00 Uhr)'},
+        {'hour': 15, 'minute': 0, 'label': 'Nachmittag (15:00 Uhr)'},
+        {'hour': 18, 'minute': 0, 'label': 'Abend (18:00 Uhr)'},
+        {'hour': 21, 'minute': 0, 'label': 'Nacht (21:00 Uhr)'},
+      ],
     ),
   ];
 
@@ -132,11 +140,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _handlePushNotificationChoice(bool enabled) async {
-    // Handle push notification choice in background without blocking UI
+    // Handle push notification choice and wait for completion
     if (enabled) {
-      _handlePushNotificationEnabled();
+      await _handlePushNotificationEnabled();
     } else {
-      _handlePushNotificationDisabled();
+      await _handlePushNotificationDisabled();
     }
   }
 
@@ -149,10 +157,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final hasPermission = await notificationService.requestPermission();
 
       if (hasPermission) {
-        // Schedule daily reminder at 9:00 AM
+        // Get selected time (default to 9:00 if not selected yet)
+        final userPrefs = ref.read(userPrefsProvider);
+        final hour = userPrefs.notificationHour;
+        final minute = userPrefs.notificationMinute;
+
+        // Schedule daily reminder at selected time
         await notificationService.scheduleDailyReminder(
-          hour: 9,
-          minute: 0,
+          hour: hour,
+          minute: minute,
           title: 'Napolill Erinnerung',
           body: 'Zeit für deine tägliche Affirmation! 🌟',
         );
@@ -162,11 +175,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                'Benachrichtigungen aktiviert! Du wirst täglich um 9:00 Uhr erinnert.',
+                'Benachrichtigungen aktiviert! Du wirst täglich um ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} Uhr erinnert.',
               ),
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -187,6 +200,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       debugPrint('Error handling push notifications: $e');
       // Update preferences anyway
       await ref.read(userPrefsProvider.notifier).updatePushAllowed(true);
+    }
+  }
+
+  Future<void> _handleNotificationTimeSelected(int hour, int minute) async {
+    try {
+      // Update notification time in preferences
+      await ref
+          .read(userPrefsProvider.notifier)
+          .updateNotificationTime(hour, minute);
+
+      // Get notification service and check if we have permission
+      final notificationService = ref.read(notificationServiceProvider);
+      final hasPermission = await notificationService.hasPermission();
+
+      if (hasPermission) {
+        // Reschedule with new time immediately
+        await notificationService.scheduleDailyReminder(
+          hour: hour,
+          minute: minute,
+          title: 'Napolill Erinnerung',
+          body: 'Zeit für deine tägliche Affirmation! 🌟',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error handling notification time selection: $e');
     }
   }
 
@@ -276,6 +314,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       onPushNotificationChoice: index == _pages.length - 1
                           ? (bool enabled) =>
                                 _handlePushNotificationChoice(enabled)
+                          : null,
+                      onNotificationTimeSelected: index == _pages.length - 1
+                          ? (int hour, int minute) =>
+                                _handleNotificationTimeSelected(hour, minute)
                           : null,
                       onCheckboxStateChanged: index == 1
                           ? (bool checked) {

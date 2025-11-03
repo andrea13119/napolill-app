@@ -9,6 +9,8 @@ class UserPrefs {
   final bool privacyAccepted;
   final bool agbAccepted;
   final bool pushAllowed;
+  final int notificationHour; // Hour for daily notification (0-23)
+  final int notificationMinute; // Minute for daily notification (0-59)
   final bool? vibrationEnabled;
   final bool? temperatureEnabled;
   final String? lastBackgroundMusic; // Last selected background music (legacy)
@@ -32,6 +34,8 @@ class UserPrefs {
     this.privacyAccepted = false,
     this.agbAccepted = false,
     this.pushAllowed = false,
+    this.notificationHour = 9,
+    this.notificationMinute = 0,
     this.vibrationEnabled,
     this.temperatureEnabled,
     this.lastBackgroundMusic,
@@ -53,6 +57,8 @@ class UserPrefs {
     bool? privacyAccepted,
     bool? agbAccepted,
     bool? pushAllowed,
+    int? notificationHour,
+    int? notificationMinute,
     bool? vibrationEnabled,
     bool? temperatureEnabled,
     String? lastBackgroundMusic,
@@ -73,6 +79,8 @@ class UserPrefs {
       privacyAccepted: privacyAccepted ?? this.privacyAccepted,
       agbAccepted: agbAccepted ?? this.agbAccepted,
       pushAllowed: pushAllowed ?? this.pushAllowed,
+      notificationHour: notificationHour ?? this.notificationHour,
+      notificationMinute: notificationMinute ?? this.notificationMinute,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       temperatureEnabled: temperatureEnabled ?? this.temperatureEnabled,
       lastBackgroundMusic: lastBackgroundMusic ?? this.lastBackgroundMusic,
@@ -101,6 +109,8 @@ class UserPrefs {
       'privacyAccepted': privacyAccepted,
       'agbAccepted': agbAccepted,
       'pushAllowed': pushAllowed,
+      'notificationHour': notificationHour,
+      'notificationMinute': notificationMinute,
       'vibrationEnabled': vibrationEnabled,
       'temperatureEnabled': temperatureEnabled,
       'lastBackgroundMusic': lastBackgroundMusic,
@@ -124,6 +134,8 @@ class UserPrefs {
       privacyAccepted: json['privacyAccepted'] ?? false,
       agbAccepted: json['agbAccepted'] ?? false,
       pushAllowed: json['pushAllowed'] ?? false,
+      notificationHour: json['notificationHour'] ?? 9,
+      notificationMinute: json['notificationMinute'] ?? 0,
       vibrationEnabled: json['vibrationEnabled'],
       temperatureEnabled: json['temperatureEnabled'],
       lastBackgroundMusic: json['lastBackgroundMusic'],

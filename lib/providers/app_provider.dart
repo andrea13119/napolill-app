@@ -124,6 +124,14 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
     await _storageService.saveUserPrefs(state);
   }
 
+  Future<void> updateNotificationTime(int hour, int minute) async {
+    state = state.copyWith(
+      notificationHour: hour,
+      notificationMinute: minute,
+    );
+    await _storageService.saveUserPrefs(state);
+  }
+
   // Sync settings updates
   Future<void> updateSyncEnabled(bool enabled) async {
     state = state.copyWith(syncEnabled: enabled);
