@@ -186,10 +186,24 @@ class SyncService {
       debugPrint(
         'Applying cloud data (cloud is newer or first sync), syncEnabled from cloud: ${cloudPrefs.syncEnabled}',
       );
-      await notifier.replaceAll(cloudPrefs);
-      await notifier.updateLastSyncAt(DateTime.now());
+
+      // WICHTIG: Bei der ersten Synchronisation (lokal lastSyncAt = null) setzen wir
+      // lastSyncAt auf null, damit alle Entries/DraftStates/ListenLogs gepullt werden,
+      // unabhängig vom Cloud-Wert. Sonst würden wir Daten überspringen, die vor
+      // dem Cloud-lastSyncAt Zeitpunkt gepusht wurden.
+      final mergedPrefs = isFirstSyncWithDefaults || lastSyncAt == null
+          ? cloudPrefs.copyWith(lastSyncAt: null)
+          : cloudPrefs;
+
+      await notifier.replaceAll(mergedPrefs);
+
+      // WICHTIG: lastSyncAt wird hier NICHT aktualisiert, da es am Ende von syncFromCloudDelta
+      // gesetzt wird, nachdem alle Pull-Operationen (Entries, DraftStates, etc.) abgeschlossen sind.
+      // Wenn wir lastSyncAt hier aktualisieren, wird _pullEntriesDelta keine Einträge mehr finden,
+      // da es nach Einträgen mit updatedAt > lastSyncAt sucht, aber lastSyncAt bereits auf
+      // DateTime.now() gesetzt wurde.
       debugPrint(
-        'Merged userPrefs, syncEnabled after merge: ${cloudPrefs.syncEnabled}, syncPromptShown: ${cloudPrefs.syncPromptShown}',
+        'Merged userPrefs, syncEnabled after merge: ${mergedPrefs.syncEnabled}, syncPromptShown: ${mergedPrefs.syncPromptShown}, lastSyncAt: ${mergedPrefs.lastSyncAt}',
       );
     } else {
       debugPrint('Not applying cloud changes (local is newer or same)');
@@ -238,13 +252,26 @@ class SyncService {
   }
 
   Future<void> _pullEntriesDelta(String uid) async {
+    debugPrint('=== PULL ENTRIES DELTA DEBUG ===');
     final storage = ref.read(storageServiceProvider);
     final lastSyncAt = ref.read(userPrefsProvider).lastSyncAt;
+    debugPrint('lastSyncAt: $lastSyncAt');
+
     Query<Map<String, dynamic>> q = _entriesCol(uid);
     if (lastSyncAt != null) {
       q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
+      debugPrint('Query filter: updatedAt > $lastSyncAt');
+    } else {
+      debugPrint('No lastSyncAt filter - pulling all entries');
     }
+
     final snap = await q.get();
+    debugPrint('Found ${snap.docs.length} entries in cloud');
+
+    if (snap.docs.isEmpty) {
+      debugPrint('No entries to pull from cloud');
+      return;
+    }
     for (final d in snap.docs) {
       final data = Map<String, dynamic>.from(d.data());
       // Normalize Timestamp fields to ISO strings for our local models
@@ -351,13 +378,26 @@ class SyncService {
   }
 
   Future<void> _pullDraftStatesDelta(String uid) async {
+    debugPrint('=== PULL DRAFT STATES DELTA DEBUG ===');
     final storage = ref.read(storageServiceProvider);
     final lastSyncAt = ref.read(userPrefsProvider).lastSyncAt;
+    debugPrint('lastSyncAt: $lastSyncAt');
+
     Query<Map<String, dynamic>> q = _draftsCol(uid);
     if (lastSyncAt != null) {
       q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
+      debugPrint('Query filter: updatedAt > $lastSyncAt');
+    } else {
+      debugPrint('No lastSyncAt filter - pulling all draft states');
     }
+
     final snap = await q.get();
+    debugPrint('Found ${snap.docs.length} draft states in cloud');
+
+    if (snap.docs.isEmpty) {
+      debugPrint('No draft states to pull from cloud');
+      return;
+    }
     for (final d in snap.docs) {
       final data = Map<String, dynamic>.from(d.data());
       if (data['createdAt'] is Timestamp) {
@@ -372,7 +412,9 @@ class SyncService {
       }
       try {
         final draft = DraftState.fromJson(data);
+        debugPrint('Processing draft state ${draft.entryId}');
         await storage.saveDraftState(draft);
+        debugPrint('Successfully saved draft state ${draft.entryId}');
       } catch (e) {
         debugPrint('Skip invalid draft ${d.id}: $e');
       }
@@ -403,13 +445,26 @@ class SyncService {
   }
 
   Future<void> _pullListenLogsDelta(String uid) async {
+    debugPrint('=== PULL LISTEN LOGS DELTA DEBUG ===');
     final storage = ref.read(storageServiceProvider);
     final lastSyncAt = ref.read(userPrefsProvider).lastSyncAt;
+    debugPrint('lastSyncAt: $lastSyncAt');
+
     Query<Map<String, dynamic>> q = _logsCol(uid);
     if (lastSyncAt != null) {
       q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
+      debugPrint('Query filter: updatedAt > $lastSyncAt');
+    } else {
+      debugPrint('No lastSyncAt filter - pulling all listen logs');
     }
+
     final snap = await q.get();
+    debugPrint('Found ${snap.docs.length} listen logs in cloud');
+
+    if (snap.docs.isEmpty) {
+      debugPrint('No listen logs to pull from cloud');
+      return;
+    }
     for (final d in snap.docs) {
       try {
         final data = Map<String, dynamic>.from(d.data());
@@ -424,7 +479,9 @@ class SyncService {
               .toIso8601String();
         }
         final log = ListenLog.fromJson(data);
+        debugPrint('Processing listen log ${d.id} (entryId: ${log.entryId})');
         await storage.saveListenLog(log);
+        debugPrint('Successfully saved listen log ${d.id}');
       } catch (e) {
         debugPrint('Skip invalid log ${d.id}: $e');
       }
@@ -454,14 +511,26 @@ class SyncService {
   }
 
   Future<void> _pullMoodLogsDelta(String uid) async {
+    debugPrint('=== PULL MOOD LOGS DELTA DEBUG ===');
     final storage = ref.read(storageServiceProvider);
     final lastSyncAt = ref.read(userPrefsProvider).lastSyncAt;
+    debugPrint('lastSyncAt: $lastSyncAt');
+
     Query<Map<String, dynamic>> q = _moodsCol(uid);
     if (lastSyncAt != null) {
       q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
+      debugPrint('Query filter: updatedAt > $lastSyncAt');
+    } else {
+      debugPrint('No lastSyncAt filter - pulling all mood logs');
     }
+
     final snap = await q.get();
-    if (snap.docs.isEmpty) return;
+    debugPrint('Found ${snap.docs.length} mood logs in cloud');
+
+    if (snap.docs.isEmpty) {
+      debugPrint('No mood logs to pull from cloud');
+      return;
+    }
     // merge moods into userPrefs
     final prefs = await storage.getUserPrefs();
     final current = prefs.moods;
@@ -469,10 +538,19 @@ class SyncService {
         .map((d) => MoodEntry.fromJson(d.data()))
         .where((m) => current.every((e) => e.date != m.date))
         .toList();
+    debugPrint(
+      'Processing ${add.length} new mood logs (${snap.docs.length - add.length} duplicates skipped)',
+    );
     if (add.isNotEmpty) {
+      for (final mood in add) {
+        debugPrint('Processing mood log ${mood.date}: ${mood.mood}');
+      }
       await ref
           .read(userPrefsProvider.notifier)
           .replaceAll(prefs.copyWith(moods: [...current, ...add]));
+      debugPrint('Successfully saved ${add.length} mood logs');
+    } else {
+      debugPrint('No new mood logs to save (all duplicates)');
     }
   }
 
