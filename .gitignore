@@ -108,3 +108,5 @@ lib/generated_plugin_registrant.dart
 
 # Local configuration files
 config/local.dart
+android/key.properties
+android/app/*.jks
