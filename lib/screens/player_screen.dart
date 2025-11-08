@@ -1678,10 +1678,22 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   double _getProgressValue() {
     if (widget.mode == 'meditation' && widget.durationMinutes != null) {
-      return _currentTime.inSeconds / (widget.durationMinutes! * 60);
-    } else {
-      return _currentTime.inSeconds / _totalTime.inSeconds;
+      final totalSeconds = widget.durationMinutes! * 60;
+      if (totalSeconds <= 0) return 0.0;
+
+      final progress = _currentTime.inSeconds / totalSeconds;
+      if (!progress.isFinite) return 0.0;
+
+      return progress.clamp(0.0, 1.0).toDouble();
     }
+
+    final totalSeconds = _totalTime.inSeconds;
+    if (totalSeconds <= 0) return 0.0;
+
+    final progress = _currentTime.inSeconds / totalSeconds;
+    if (!progress.isFinite) return 0.0;
+
+    return progress.clamp(0.0, 1.0).toDouble();
   }
 
   String _formatTime(Duration duration) {
