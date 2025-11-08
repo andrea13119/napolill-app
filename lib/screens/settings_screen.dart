@@ -1764,27 +1764,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               'Synchronisation',
               style: AppTheme.headingStyle.copyWith(fontSize: 18),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RadioListTile<bool>(
-                  value: false,
-                  groupValue: enabled,
-                  onChanged: (v) => setState(() => enabled = v ?? false),
-                  title: const Text('Nur lokal speichern'),
-                  subtitle: const Text(
-                    'Keine Datenübertragung, offline nutzbar',
+            content: RadioGroup<bool>(
+              groupValue: enabled,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => enabled = value);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RadioListTile<bool>(
+                    value: false,
+                    title: const Text('Nur lokal speichern'),
+                    subtitle: const Text(
+                      'Keine Datenübertragung, offline nutzbar',
+                    ),
+                    selected: !enabled,
                   ),
-                ),
-                RadioListTile<bool>(
-                  value: true,
-                  groupValue: enabled,
-                  onChanged: (v) => setState(() => enabled = v ?? true),
-                  title: const Text('Mit Firebase synchronisieren'),
-                  subtitle: const Text('Daten zwischen Geräten abgleichen'),
-                ),
-              ],
+                  RadioListTile<bool>(
+                    value: true,
+                    title: const Text('Mit Firebase synchronisieren'),
+                    subtitle: const Text('Daten zwischen Geräten abgleichen'),
+                    selected: enabled,
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(

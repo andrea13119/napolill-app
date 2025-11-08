@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -126,6 +125,8 @@ class _SyncBootstrapperState extends ConsumerState<SyncBootstrapper> {
         .shouldShowSyncPrompt();
     if (!shouldShow) return;
 
+    if (!mounted) return;
+
     final enabled = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -146,6 +147,8 @@ class _SyncBootstrapperState extends ConsumerState<SyncBootstrapper> {
         ],
       ),
     );
+
+    if (!mounted) return;
 
     await ref.read(userPrefsProvider.notifier).setSyncPromptShown();
 

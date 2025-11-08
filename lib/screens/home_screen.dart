@@ -75,6 +75,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final shouldShow = await ref.read(syncServiceProvider).shouldShowSyncPrompt();
     if (!shouldShow) return;
 
+    if (!mounted) return;
+
     final enabled = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -98,6 +100,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+
+    if (!mounted) return;
 
     // Set syncPromptShown: true (locally)
     await ref.read(userPrefsProvider.notifier).setSyncPromptShown();

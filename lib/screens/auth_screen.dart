@@ -233,7 +233,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
+                        color: Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.red),
                       ),
@@ -256,7 +256,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         labelText: 'Anzeigename',
                         labelStyle: GoogleFonts.poppins(color: Colors.white70),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.white24),
@@ -282,7 +282,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       labelText: 'E-Mail',
                       labelStyle: GoogleFonts.poppins(color: Colors.white70),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
+                      fillColor: Colors.white.withValues(alpha: 0.1),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.white24),
@@ -308,7 +308,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       labelText: 'Passwort',
                       labelStyle: GoogleFonts.poppins(color: Colors.white70),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
+                      fillColor: Colors.white.withValues(alpha: 0.1),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.white24),

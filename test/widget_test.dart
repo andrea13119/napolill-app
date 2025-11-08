@@ -5,26 +5,28 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:napolill/main.dart';
+import 'package:napolill/models/user_prefs.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('UserPrefs copyWith updates selected topic and keeps others', () {
+    final original = UserPrefs(
+      selectedTopic: 'selbstbewusstsein',
+      level: 'beginner',
+      consentAccepted: true,
+      privacyAccepted: true,
+      agbAccepted: true,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final updated = original.copyWith(
+      selectedTopic: 'selbstwert',
+      consentAccepted: false,
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(updated.selectedTopic, 'selbstwert');
+    expect(updated.level, original.level);
+    expect(updated.privacyAccepted, original.privacyAccepted);
+    expect(updated.agbAccepted, original.agbAccepted);
+    expect(updated.consentAccepted, isFalse);
   });
 }
