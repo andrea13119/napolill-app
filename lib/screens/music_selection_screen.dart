@@ -514,7 +514,7 @@ class _MusicSelectionScreenState extends ConsumerState<MusicSelectionScreen> {
       await _audioPlayer!.stop();
 
       // Load and play the selected music
-      final assetPath = 'assets/audio/$_selectedMusic.mp3';
+      final assetPath = 'assets/audio/$_selectedMusic.m4a';
       debugPrint('Loading asset: $assetPath');
 
       // Try to load the asset with timeout
@@ -845,7 +845,7 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
 
       // Prepare background music if selected
       if (widget.selectedMusic != null && widget.selectedMusic != 'none') {
-        final backgroundPath = 'assets/audio/${widget.selectedMusic}.mp3';
+        final backgroundPath = 'assets/audio/${widget.selectedMusic}.m4a';
         preparationTasks.add(_backgroundPlayer!.setAsset(backgroundPath));
         preparationTasks.add(
           _backgroundPlayer!.setLoopMode(just_audio.LoopMode.one),
@@ -945,7 +945,7 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
       // Create background music path
       String? bgLoopPath;
       if (widget.selectedMusic != null && widget.selectedMusic != 'none') {
-        bgLoopPath = 'assets/audio/${widget.selectedMusic}.mp3';
+        bgLoopPath = 'assets/audio/${widget.selectedMusic}.m4a';
       }
 
       // Determine the title: use custom title if user renamed the draft, otherwise use standard title

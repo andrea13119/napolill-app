@@ -302,7 +302,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         if (bgPath != null && bgPath.contains('solfeggio_')) {
           final parts = bgPath.split('/');
           final fileName = parts.last;
-          _selectedBackgroundMusic = fileName.replaceAll('.mp3', '');
+          _selectedBackgroundMusic =
+              fileName.replaceFirst(RegExp(r'\.(mp3|m4a)$'), '');
           debugPrint('Extracted solfeggio ID: $_selectedBackgroundMusic');
         } else {
           _selectedBackgroundMusic = widget.entry.bgLoopPath;
@@ -319,7 +320,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         // Use current selection (already set in initState)
         if (_selectedBackgroundMusic != null &&
             _selectedBackgroundMusic != 'none') {
-          bgPath = 'assets/audio/$_selectedBackgroundMusic.mp3';
+          bgPath = 'assets/audio/$_selectedBackgroundMusic.m4a';
         }
 
         debugPrint(
@@ -381,7 +382,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         debugPrint('Pre-loading background music for immediate playback...');
         String? bgPath;
         if (_selectedBackgroundMusic!.startsWith('solfeggio_')) {
-          bgPath = 'assets/audio/$_selectedBackgroundMusic.mp3';
+          bgPath = 'assets/audio/$_selectedBackgroundMusic.m4a';
         } else {
           bgPath = _selectedBackgroundMusic;
         }
@@ -945,7 +946,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
       String? bgPath;
       if (musicId != 'none') {
-        bgPath = 'assets/audio/$musicId.mp3';
+        bgPath = 'assets/audio/$musicId.m4a';
         debugPrint('Background music path: $bgPath');
       } else {
         debugPrint('No background music selected');

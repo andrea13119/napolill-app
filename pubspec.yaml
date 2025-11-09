@@ -105,15 +105,15 @@ flutter:
     - assets/images/brain.png
     - assets/images/completion_button.png
     - assets/images/logo_napolill.png
-    - assets/audio/solfeggio_174.mp3
-    - assets/audio/solfeggio_284.mp3
-    - assets/audio/solfeggio_396.mp3
-    - assets/audio/solfeggio_417.mp3
-    - assets/audio/solfeggio_528.mp3
-    - assets/audio/solfeggio_639.mp3
-    - assets/audio/solfeggio_741.mp3
-    - assets/audio/solfeggio_852.mp3
-    - assets/audio/solfeggio_963.mp3
+    - assets/audio/solfeggio_174.m4a
+    - assets/audio/solfeggio_284.m4a
+    - assets/audio/solfeggio_396.m4a
+    - assets/audio/solfeggio_417.m4a
+    - assets/audio/solfeggio_528.m4a
+    - assets/audio/solfeggio_639.m4a
+    - assets/audio/solfeggio_741.m4a
+    - assets/audio/solfeggio_852.m4a
+    - assets/audio/solfeggio_963.m4a
     - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
