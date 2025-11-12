@@ -951,8 +951,7 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
       // Determine the title: use custom title if user renamed the draft, otherwise use standard title
       String entryTitle;
       if (widget.draftState != null &&
-          widget.draftState!.title != 'Draft' &&
-          !widget.draftState!.title.startsWith('Draft ')) {
+          !_isDefaultDraftTitle(widget.draftState!.title)) {
         // User has customized the title, use it
         entryTitle = widget.draftState!.title;
         debugPrint('Using custom title: $entryTitle');
@@ -963,7 +962,7 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
           userPrefs.level,
         );
         debugPrint('Using standard title: $entryTitle');
-        debugPrint('Draft title was: ${widget.draftState?.title}');
+        debugPrint('Entwurfstitel war: ${widget.draftState?.title}');
       }
 
       // Create the Entry
@@ -1068,15 +1067,15 @@ class _CreationPreviewScreenState extends ConsumerState<CreationPreviewScreen> {
   }
 
   String _getLevelDisplayName(String level) {
-    switch (level) {
-      case AppConstants.levelBeginner:
-        return AppStrings.anfaenger;
-      case AppConstants.levelAdvanced:
-        return AppStrings.fortgeschritten;
-      case AppConstants.levelOpen:
-        return AppStrings.offen;
-      default:
-        return level;
+    return AppStrings.mapLevelToLabel(level);
+  }
+
+  bool _isDefaultDraftTitle(String? title) {
+    if (title == null) {
+      return false;
     }
+    const defaultPrefixes = ['Draft', 'Entwurf'];
+    return defaultPrefixes.contains(title) ||
+        defaultPrefixes.any((prefix) => title.startsWith('$prefix '));
   }
 }

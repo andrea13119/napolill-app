@@ -173,9 +173,23 @@ class AppStrings {
   static const String eigeneZiele = 'Eigene Ziele';
 
   // Levels
-  static const String anfaenger = 'Anfänger';
-  static const String fortgeschritten = 'Fortgeschritten';
-  static const String offen = 'Offen';
+  static const String level1Anfaenger = 'LEVEL 1 - ANFÄNGER';
+  static const String level2Erfahren = 'LEVEL 2 - ERFAHREN';
+  static const String level3Fortgeschritten = 'LEVEL 3 - FORTGESCHRITTEN';
+
+  static String mapLevelToLabel(String level) {
+    final normalized = level.toLowerCase();
+    switch (normalized) {
+      case AppConstants.levelBeginner:
+        return level1Anfaenger;
+      case AppConstants.levelAdvanced:
+        return level2Erfahren;
+      case AppConstants.levelOpen:
+        return level3Fortgeschritten;
+      default:
+        return 'LEVEL ${normalized.toUpperCase()}';
+    }
+  }
 
   // Moods
   static const String wuetend = 'WUETEND';

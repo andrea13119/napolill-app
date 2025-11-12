@@ -435,15 +435,6 @@ class _FinalNoticeScreenState extends ConsumerState<FinalNoticeScreen> {
   }
 
   String _getLevelDisplayName(String level) {
-    switch (level) {
-      case AppConstants.levelBeginner:
-        return AppStrings.anfaenger;
-      case AppConstants.levelAdvanced:
-        return AppStrings.fortgeschritten;
-      case AppConstants.levelOpen:
-        return AppStrings.offen;
-      default:
-        return level;
-    }
+    return AppStrings.mapLevelToLabel(level);
   }
 }

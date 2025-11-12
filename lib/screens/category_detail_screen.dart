@@ -193,7 +193,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
           // Level 1
           _buildLevelSection(
-            'LEVEL 1',
+            AppStrings.level1Anfaenger,
             entries.where((e) => e.level == AppConstants.levelBeginner).toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
           ),
@@ -202,7 +202,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
           // Level 2
           _buildLevelSection(
-            'LEVEL 2',
+            AppStrings.level2Erfahren,
             entries.where((e) => e.level == AppConstants.levelAdvanced).toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
           ),
@@ -211,7 +211,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
           // Level 3
           _buildLevelSection(
-            'LEVEL 3',
+            AppStrings.level3Fortgeschritten,
             entries.where((e) => e.level == AppConstants.levelOpen).toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
           ),
@@ -293,7 +293,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Draft (zum weiter Bearbeiten öffnen)',
+          'Entwurf (zum Weiterbearbeiten öffnen)',
           style: AppTheme.headingStyle.copyWith(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -527,7 +527,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          draft.title,
+                          _getLocalizedDraftTitle(draft.title),
                           style: AppTheme.headingStyle.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -633,7 +633,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       ),
       child: Center(
         child: Text(
-          'Keine Drafts vorhanden',
+          'Keine Entwürfe vorhanden',
           style: AppTheme.bodyStyle.copyWith(
             color: Colors.white.withValues(alpha: 0.7),
           ),
@@ -972,7 +972,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   void _showEditDraftTitleDialog(DraftState draft) {
     final moodTheme = ref.read(currentMoodThemeProvider);
     final TextEditingController titleController = TextEditingController(
-      text: draft.title,
+      text: _getLocalizedDraftTitle(draft.title),
     );
 
     showDialog(
@@ -988,7 +988,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
             ),
           ),
           title: Text(
-            'Draft-Titel bearbeiten',
+            'Entwurfstitel bearbeiten',
             style: AppTheme.headingStyle.copyWith(
               color: Colors.white,
               fontSize: 20,
@@ -1066,7 +1066,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Draft-Titel wurde zu "$newTitle" geändert'),
+            content: Text('Entwurfstitel wurde zu "$newTitle" geändert'),
             backgroundColor: AppTheme.secondaryColor,
             duration: const Duration(seconds: 2),
           ),
@@ -1103,7 +1103,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Draft vom ${_formatDateTime(DateTime.fromMillisecondsSinceEpoch(int.parse(draft.entryId)))} wurde gelöscht',
+              'Entwurf vom ${_formatDateTime(DateTime.fromMillisecondsSinceEpoch(int.parse(draft.entryId)))} wurde gelöscht',
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
@@ -1114,7 +1114,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fehler beim Löschen des Drafts: $e'),
+            content: Text('Fehler beim Löschen des Entwurfs: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1156,7 +1156,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Draft löschen?',
+                      'Entwurf löschen?',
                       style: AppTheme.headingStyle.copyWith(
                         color: Colors.white,
                         fontSize: 20,
@@ -1170,7 +1170,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Möchtest du diesen Draft wirklich löschen?',
+                    'Möchtest du diesen Entwurf wirklich löschen?',
                     style: AppTheme.bodyStyle.copyWith(
                       color: Colors.white,
                       fontSize: 16,
@@ -1187,7 +1187,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Draft vom:',
+                          'Entwurf vom:',
                           style: AppTheme.bodyStyle.copyWith(
                             color: Colors.red,
                             fontWeight: FontWeight.w600,
@@ -1249,6 +1249,16 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
         false;
   }
 
+  String _getLocalizedDraftTitle(String title) {
+    if (title == 'Draft') {
+      return 'Entwurf';
+    }
+    if (title.startsWith('Draft ')) {
+      return 'Entwurf ${title.substring('Draft '.length)}';
+    }
+    return title;
+  }
+
   void _showInfoDialog() {
     final moodTheme = ref.read(currentMoodThemeProvider);
 
@@ -1293,7 +1303,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
             ],
           ),
           content: Text(
-            'Hier findest du alle deine Aufnahmen für ${widget.categoryTitle}, sortiert nach Schwierigkeitsgraden. Level 1 ist für Anfänger, Level 2 für Fortgeschrittene und Level 3 für alle Inhalte.',
+            'Hier findest du alle deine Aufnahmen für ${widget.categoryTitle}, sortiert nach Schwierigkeitsgraden: LEVEL 1 - ANFÄNGER, LEVEL 2 - ERFAHREN und LEVEL 3 - FORTGESCHRITTEN.',
             style: AppTheme.bodyStyle.copyWith(
               fontSize: 16,
               color: Colors.white,

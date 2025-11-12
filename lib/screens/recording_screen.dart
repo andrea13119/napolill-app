@@ -417,7 +417,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
         entryId: entryId,
         title:
             widget.draftState?.title ??
-            'Draft ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
+            'Entwurf ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
         category: widget.draftState?.category ?? 'custom',
         nextIndex: nextUnrecordedIndex,
         perTakeStatus: takeStatusList,
@@ -553,7 +553,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
                           Colors.blue[300]!,
                         ),
                         _buildBulletPoint(
-                          'Zu finden im Draft-Ordner deiner Kategorie',
+                          'Zu finden im Entwurfsordner deiner Kategorie',
                           Colors.purple[300]!,
                         ),
                         _buildBulletPoint(
@@ -679,7 +679,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
       entryId: entryId,
       title:
           widget.draftState?.title ??
-          'Draft ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
+          'Entwurf ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
       category: widget.draftState?.category ?? 'custom',
       nextIndex: nextUnrecordedIndex,
       perTakeStatus: takeStatusList,

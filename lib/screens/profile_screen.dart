@@ -162,7 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Badges
+          // Abzeichen
           _buildBadgesCard(),
 
           const SizedBox(height: 24),
@@ -1012,7 +1012,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Row(
               children: [
                 Text(
-                  'BADGES',
+                  'ABZEICHEN',
                   style: AppTheme.headingStyle.copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1245,7 +1245,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                             const SizedBox(height: 8),
                             Text(
-                              'Streak-Badges',
+                              'Streak-Abzeichen',
                               style: AppTheme.bodyStyle.copyWith(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -1425,7 +1425,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           _buildNavItem('Übersicht', Icons.dashboard, 0),
           _buildNavItem('Kalender', Icons.calendar_month, 1),
-          _buildNavItem('Badges', Icons.emoji_events, 2),
+          _buildNavItem('Abzeichen', Icons.emoji_events, 2),
         ],
       ),
     );
@@ -1667,19 +1667,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
         title: Text(
-          'BADGES',
+          'ABZEICHEN',
           style: AppTheme.headingStyle.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          'Sammle Badges für deine Erfolge:\n\n'
+          'Sammle Abzeichen für deine Erfolge:\n\n'
           '• Anmeldung & erste Schritte\n'
           '• Erste Affirmation, Meditation & Dauerschleife\n'
-          '• Streak-Badges für aufeinanderfolgende Tage (3, 6, 9, ... 30 Tage)\n'
-          '• Meister-Badge für 100 Meditationen\n\n'
-          'Farbige Badges hast du bereits freigeschaltet, graue Badges kannst du noch erreichen! 🏆',
+          '• Streak-Abzeichen für aufeinanderfolgende Tage (3, 6, 9, ... 30 Tage)\n'
+          '• Meister-Abzeichen für 100 Meditationen\n\n'
+          'Farbige Abzeichen hast du bereits freigeschaltet, graue Abzeichen kannst du noch erreichen! 🏆',
           style: AppTheme.bodyStyle.copyWith(fontSize: 14, height: 1.5),
         ),
         actions: [
@@ -1722,9 +1722,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         content: Text(
           'Deine Erfolge zeigen dir deinen Fortschritt:\n\n'
           '• Anmeldung & Erste Schritte: Willkommen, erste Affirmation, erste Meditation, erste Dauerschleife\n'
-          '• Streak-Badges: Halte deine tägliche Routine aufrecht\n'
+          '• Streak-Abzeichen: Halte deine tägliche Routine aufrecht\n'
           '• Meisterschaft: Erreiche 100 Meditationen\n\n'
-          'Grüne Häkchen zeigen abgeschlossene Erfolge. Nutze diese Liste als Motivation, um alle Badges zu sammeln! ✅',
+          'Grüne Häkchen zeigen abgeschlossene Erfolge. Nutze diese Liste als Motivation, um alle Abzeichen zu sammeln! ✅',
           style: AppTheme.bodyStyle.copyWith(fontSize: 14, height: 1.5),
         ),
         actions: [
@@ -1945,16 +1945,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   String _getLevelDisplayName(String level) {
-    switch (level) {
-      case AppConstants.levelBeginner:
-        return AppStrings.anfaenger;
-      case AppConstants.levelAdvanced:
-        return AppStrings.fortgeschritten;
-      case AppConstants.levelOpen:
-        return AppStrings.offen;
-      default:
-        return level;
-    }
+    return AppStrings.mapLevelToLabel(level);
   }
 
   String _formatDate(DateTime date) {

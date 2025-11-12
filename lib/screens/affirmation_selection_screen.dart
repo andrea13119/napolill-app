@@ -115,7 +115,7 @@ class _AffirmationSelectionScreenState
         draftState = DraftState(
           entryId: entryId,
           title:
-              'Draft ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
+              'Entwurf ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
           category: category,
           nextIndex: 0,
           perTakeStatus: List.generate(30, (index) => TakeStatus.todo),
@@ -468,7 +468,7 @@ class _AffirmationSelectionScreenState
         entryId: entryId,
         title:
             widget.draftState?.title ??
-            'Draft ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
+            'Entwurf ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
         category: category,
         selectedAffirmations: _selectedAffirmations,
         customAffirmations: _customAffirmations,
@@ -589,7 +589,7 @@ class _AffirmationSelectionScreenState
                           Colors.blue[300]!,
                         ),
                         _buildBulletPoint(
-                          'Zu finden im Draft-Ordner deiner Kategorie',
+                          'Zu finden im Entwurfsordner deiner Kategorie',
                           Colors.purple[300]!,
                         ),
                         _buildBulletPoint(

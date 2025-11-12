@@ -1,3 +1,5 @@
+import '../utils/constants.dart';
+
 class Entry {
   final String id;
   final String title;
@@ -106,15 +108,6 @@ class Entry {
   }
 
   String get levelDisplayName {
-    switch (level) {
-      case 'beginner':
-        return 'Anfänger';
-      case 'advanced':
-        return 'Fortgeschritten';
-      case 'open':
-        return 'Offen';
-      default:
-        return level;
-    }
+    return AppStrings.mapLevelToLabel(level);
   }
 }

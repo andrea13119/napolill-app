@@ -276,16 +276,7 @@ class RecentlyPlayed extends ConsumerWidget {
   }
 
   String _getLevelDisplayName(String level) {
-    switch (level) {
-      case 'beginner':
-        return 'Anfänger';
-      case 'advanced':
-        return 'Fortgeschritten';
-      case 'open':
-        return 'Offen';
-      default:
-        return level;
-    }
+    return AppStrings.mapLevelToLabel(level);
   }
 
   String _getCategoryDisplayName(String category) {

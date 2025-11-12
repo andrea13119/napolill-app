@@ -20,21 +20,21 @@ class _LevelSelectionScreenState extends ConsumerState<LevelSelectionScreen> {
   final List<LevelOption> _levels = [
     LevelOption(
       id: AppConstants.levelBeginner,
-      title: AppStrings.anfaenger,
+      title: AppStrings.level1Anfaenger,
       description: 'Lieber ruhig & klar geführt',
       color: Colors.green,
       icon: Icons.school,
     ),
     LevelOption(
       id: AppConstants.levelAdvanced,
-      title: AppStrings.fortgeschritten,
+      title: AppStrings.level2Erfahren,
       description: 'Mit mehr Tiefe',
       color: Colors.orange,
       icon: Icons.trending_up,
     ),
     LevelOption(
       id: AppConstants.levelOpen,
-      title: AppStrings.offen,
+      title: AppStrings.level3Fortgeschritten,
       description: 'Alle Inhalte freigeschaltet',
       color: Colors.blue,
       icon: Icons.all_inclusive,

@@ -156,7 +156,7 @@ class StorageService {
       // For version 4, we need to add title column
       try {
         await db.execute('''
-          ALTER TABLE draft_states ADD COLUMN title TEXT NOT NULL DEFAULT 'Draft'
+          ALTER TABLE draft_states ADD COLUMN title TEXT NOT NULL DEFAULT 'Entwurf'
         ''');
         debugPrint('Successfully added title column');
       } catch (e) {

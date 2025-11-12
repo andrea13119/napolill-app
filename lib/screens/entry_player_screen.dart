@@ -423,16 +423,7 @@ class _EntryPlayerScreenState extends ConsumerState<EntryPlayerScreen> {
   }
 
   String _getLevelDisplayName(String level) {
-    switch (level) {
-      case AppConstants.levelBeginner:
-        return AppStrings.anfaenger;
-      case AppConstants.levelAdvanced:
-        return AppStrings.fortgeschritten;
-      case AppConstants.levelOpen:
-        return AppStrings.offen;
-      default:
-        return level;
-    }
+    return AppStrings.mapLevelToLabel(level);
   }
 
   IconData _getCategoryIcon(String category) {
@@ -470,7 +461,7 @@ class _EntryPlayerScreenState extends ConsumerState<EntryPlayerScreen> {
           '• Die Affirmationen werden in der gewählten Zeit abgespielt\n'
           '• Der Timer stoppt automatisch nach Ablauf der Zeit\n'
           '• Perfekt für strukturierte Meditationssitzungen\n'
-          '• Ideal für Anfänger und Fortgeschrittene\n\n'
+          '• Ideal für LEVEL 1 - ANFÄNGER und LEVEL 2 - ERFAHREN\n\n'
           'Die Meditation hilft dir dabei, gezielt Zeit für deine persönliche Entwicklung zu schaffen.';
     } else {
       title = '♾️ Dauerschleife';

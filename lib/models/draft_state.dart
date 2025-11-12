@@ -21,7 +21,7 @@ class DraftState {
 
   DraftState({
     required this.entryId,
-    this.title = 'Draft',
+    this.title = 'Entwurf',
     this.category = 'custom',
     this.nextIndex = 0,
     this.perTakeStatus = const [],
@@ -88,7 +88,7 @@ class DraftState {
   factory DraftState.fromJson(Map<String, dynamic> json) {
     return DraftState(
       entryId: json['entryId'],
-      title: json['title'] ?? 'Draft',
+      title: json['title'] ?? 'Entwurf',
       category: json['category'] ?? 'custom',
       nextIndex: json['nextIndex'] ?? 0,
       perTakeStatus: _parseTakeStatusList(json['perTakeStatus']),
