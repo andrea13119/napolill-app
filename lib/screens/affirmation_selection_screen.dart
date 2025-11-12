@@ -399,27 +399,171 @@ class _AffirmationSelectionScreenState
   }
 
   Widget _buildSuggestionChips(List<String> suggestions) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: suggestions.map((suggestion) {
-        final isSelected = _selectedAffirmations.contains(suggestion);
-        return FilterChip(
-          label: Text(
-            suggestion,
-            style: TextStyle(
-              color: isSelected ? Colors.white : AppTheme.textDarkColor,
-            ),
-          ),
-          selected: isSelected,
-          onSelected: _selectedAffirmations.length >= 30 && !isSelected
-              ? null
-              : (_) => _toggleAffirmation(suggestion),
-          backgroundColor: AppTheme.cardColor,
-          selectedColor: MoodTheme.standard.accentColor,
-          checkmarkColor: Colors.white,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double horizontalMargin = 16.0;
+        final double screenWidth = MediaQuery.of(context).size.width;
+        final double availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : screenWidth;
+        final double chipWidth = (availableWidth - 2 * horizontalMargin).clamp(
+          0.0,
+          availableWidth,
         );
-      }).toList(),
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: suggestions.map((suggestion) {
+              final bool isSelected = _selectedAffirmations.contains(
+                suggestion,
+              );
+              final bool canToggle =
+                  _selectedAffirmations.length < 30 || isSelected;
+
+              return GestureDetector(
+                onTap: canToggle ? () => _toggleAffirmation(suggestion) : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  width: chipWidth,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              MoodTheme.standard.accentColor.withValues(
+                                alpha: 0.95,
+                              ),
+                              MoodTheme.standard.accentColor.withValues(
+                                alpha: 0.75,
+                              ),
+                            ],
+                          )
+                        : LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppTheme.cardColor,
+                              AppTheme.cardColor.withValues(alpha: 0.9),
+                            ],
+                          ),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : Colors.black.withValues(alpha: 0.05),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (isSelected
+                                    ? MoodTheme.standard.accentColor
+                                    : Colors.black)
+                                .withValues(alpha: isSelected ? 0.28 : 0.08),
+                        blurRadius: isSelected ? 18 : 10,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 6,
+                        height: 44,
+                        margin: const EdgeInsets.only(right: 14),
+                        decoration: BoxDecoration(
+                          gradient: isSelected
+                              ? LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.9),
+                                    Colors.white.withValues(alpha: 0.4),
+                                  ],
+                                )
+                              : LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.08),
+                                    Colors.black.withValues(alpha: 0.03),
+                                  ],
+                                ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      if (isSelected)
+                        Container(
+                          width: 28,
+                          height: 28,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.4),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 0, height: 0),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              suggestion,
+                              softWrap: true,
+                              maxLines: null,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppTheme.textDarkColor,
+                                fontWeight: FontWeight.w600,
+                                height: 1.4,
+                                fontSize: 15,
+                                letterSpacing: 0.15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: isSelected ? 0.9 : 0.0,
+                              child: Text(
+                                'Aktiv',
+                                style: AppTheme.bodyStyle.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  letterSpacing: 0.8,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -427,17 +571,115 @@ class _AffirmationSelectionScreenState
     return Column(
       children: _selectedAffirmations.map((affirmation) {
         final isCustom = _customAffirmations.contains(affirmation);
-        return Card(
-          color: AppTheme.cardColor,
-          child: ListTile(
-            leading: Icon(
-              isCustom ? Icons.edit : Icons.check_circle,
-              color: MoodTheme.standard.accentColor,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Colors.white.withValues(alpha: 0.92)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: MoodTheme.standard.accentColor.withValues(alpha: 0.4),
+                width: 1.1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            title: Text(affirmation, style: AppTheme.bodyDarkStyle),
-            trailing: IconButton(
-              onPressed: () => _toggleAffirmation(affirmation),
-              icon: const Icon(Icons.remove_circle, color: Colors.red),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  margin: const EdgeInsets.only(right: 14),
+                  decoration: BoxDecoration(
+                    color: MoodTheme.standard.accentColor.withValues(
+                      alpha: 0.2,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: MoodTheme.standard.accentColor.withValues(
+                        alpha: 0.6,
+                      ),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Icon(
+                    isCustom ? Icons.edit : Icons.check,
+                    size: 16,
+                    color: MoodTheme.standard.accentColor,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        affirmation,
+                        softWrap: true,
+                        maxLines: null,
+                        style: AppTheme.bodyDarkStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          height: 1.4,
+                          letterSpacing: 0.15,
+                        ),
+                      ),
+                      if (isCustom) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: MoodTheme.standard.accentColor.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Eigene Affirmation',
+                            style: AppTheme.bodyDarkStyle.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: MoodTheme.standard.accentColor,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () => _toggleAffirmation(affirmation),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.remove,
+                      size: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
