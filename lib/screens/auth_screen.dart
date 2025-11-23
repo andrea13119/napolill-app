@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/app_provider.dart';
 import '../services/sync_service.dart';
 import '../utils/mood_theme.dart';
+import '../utils/app_theme.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
 
@@ -23,6 +24,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLoading = false;
   bool _isSyncing = false;
   String? _errorMessage;
+  String? _successMessage;
 
   @override
   void dispose() {
@@ -118,6 +120,107 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showResetPasswordDialog() {
+    final moodTheme = MoodTheme.standard;
+    final emailController = TextEditingController(text: _emailController.text.trim());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: moodTheme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: moodTheme.accentColor.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        title: Text(
+          'Passwort zurücksetzen',
+          style: AppTheme.headingStyle.copyWith(fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Gib deine E-Mail-Adresse ein, um ein neues Passwort anzufordern.',
+              style: AppTheme.bodyStyle,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: AppTheme.bodyStyle.copyWith(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'E-Mail',
+                labelStyle: AppTheme.bodyStyle.copyWith(
+                  color: Colors.grey[400],
+                ),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.1),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: moodTheme.accentColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bitte gib eine E-Mail-Adresse ein'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                final authService = ref.read(authServiceProvider);
+                await authService.resetPassword(email: email);
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                if (!context.mounted) return;
+                setState(() {
+                  _successMessage = 'Eine E-Mail zum Zurücksetzen des Passworts wurde an $email gesendet. Bitte überprüfe dein Postfach.';
+                  _errorMessage = null;
+                });
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Fehler: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: moodTheme.accentColor),
+            child: const Text('Senden'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -247,6 +350,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                   if (_errorMessage != null) const SizedBox(height: 16),
 
+                  // Success message
+                  if (_successMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green),
+                      ),
+                      child: Text(
+                        _successMessage!,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  if (_successMessage != null) const SizedBox(height: 16),
+
                   // Display name (only for sign up)
                   if (_isSignUp)
                     TextField(
@@ -323,7 +445,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 8),
+
+                  // Passwort vergessen Link (nur beim Anmelden anzeigen)
+                  if (!_isSignUp)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _showResetPasswordDialog,
+                        child: Text(
+                          'Passwort vergessen?',
+                          style: GoogleFonts.poppins(
+                            color: moodTheme.accentColor,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
 
                   // Sign in/up button
                   SizedBox(
@@ -398,6 +538,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       setState(() {
                         _isSignUp = !_isSignUp;
                         _errorMessage = null;
+                        _successMessage = null;
                       });
                     },
                     child: Text(
