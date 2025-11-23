@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_provider.dart';
 import '../services/sync_service.dart';
@@ -34,10 +35,47 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.dispose();
   }
 
+  // Hilfsfunktion für benutzerfreundliche Fehlermeldungen
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'wrong-password':
+          return 'Das eingegebene Passwort ist falsch. Bitte versuche es erneut.';
+        case 'user-not-found':
+          return 'Es wurde kein Konto mit dieser E-Mail-Adresse gefunden.';
+        case 'invalid-email':
+          return 'Die eingegebene E-Mail-Adresse ist ungültig.';
+        case 'user-disabled':
+          return 'Dieses Konto wurde deaktiviert. Bitte kontaktiere den Support.';
+        case 'too-many-requests':
+          return 'Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuche es später erneut.';
+        case 'email-already-in-use':
+          return 'Diese E-Mail-Adresse wird bereits verwendet.';
+        case 'weak-password':
+          return 'Das Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort.';
+        case 'operation-not-allowed':
+          return 'Diese Anmeldemethode ist nicht erlaubt.';
+        case 'invalid-credential':
+          return 'Die Anmeldedaten sind ungültig. Bitte überprüfe E-Mail und Passwort.';
+        case 'network-request-failed':
+          return 'Netzwerkfehler. Bitte überprüfe deine Internetverbindung.';
+        default:
+          return 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+      }
+    }
+    // Fallback für andere Fehlertypen
+    final errorString = error.toString();
+    if (errorString.contains('Exception:')) {
+      return errorString.replaceAll('Exception: ', '');
+    }
+    return 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.';
+  }
+
   Future<void> _handleSignIn() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
 
     try {
@@ -67,7 +105,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           final displayName = _displayNameController.text.trim();
           await authService.updateDisplayName(displayName);
           // Also save to UserPrefs so it gets synced
-          await ref.read(userPrefsProvider.notifier).updateDisplayName(displayName);
+          await ref
+              .read(userPrefsProvider.notifier)
+              .updateDisplayName(displayName);
         }
       } else {
         await authService.signInWithEmailAndPassword(
@@ -83,7 +123,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         setState(() {
           _isSyncing = true;
         });
-        
+
         try {
           debugPrint('AuthScreen: Performing cloud sync after login');
           await ref.read(syncServiceProvider).syncFromCloudDelta();
@@ -116,7 +156,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = _getUserFriendlyErrorMessage(e);
         _isLoading = false;
       });
     }
@@ -124,7 +164,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   void _showResetPasswordDialog() {
     final moodTheme = MoodTheme.standard;
-    final emailController = TextEditingController(text: _emailController.text.trim());
+    final emailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
 
     showDialog(
       context: context,
@@ -202,7 +244,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 Navigator.of(context).pop();
                 if (!context.mounted) return;
                 setState(() {
-                  _successMessage = 'Eine E-Mail zum Zurücksetzen des Passworts wurde an $email gesendet. Bitte überprüfe dein Postfach.';
+                  _successMessage =
+                      'Eine E-Mail zum Zurücksetzen des Passworts wurde an $email gesendet. Bitte überprüfe dein Postfach.';
                   _errorMessage = null;
                 });
               } catch (e) {
@@ -227,6 +270,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
 
     try {
@@ -259,7 +303,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         setState(() {
           _isSyncing = true;
         });
-        
+
         try {
           debugPrint('AuthScreen: Performing cloud sync after Google login');
           await ref.read(syncServiceProvider).syncFromCloudDelta();
@@ -292,7 +336,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = _getUserFriendlyErrorMessage(e);
         _isLoading = false;
       });
     }
