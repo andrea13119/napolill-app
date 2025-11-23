@@ -247,18 +247,21 @@ class CompletionScreen extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                // Refresh statistics before navigating
-                ref
+              onPressed: () async {
+                // Refresh statistics before navigating - WARTEN auf Abschluss
+                await ref
                     .read(statisticsNotifierProvider.notifier)
                     .refreshStatistics();
 
                 // Navigate directly to home screen
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const HomeScreen(initialTabIndex: 0),
-                  ),
-                );
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const HomeScreen(initialTabIndex: 0),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: CompletionTheme.primaryGold,

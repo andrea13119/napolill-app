@@ -26,6 +26,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _isDialogShowing =
+      false; // Flag um zu verhindern, dass Dialog mehrfach angezeigt wird
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +42,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     // Show sync prompt on first arrival to Home
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowSyncPrompt());
+
+    // Prüfe nach dem ersten Frame, ob bereits ein Badge wartet
+    // Dies ist wichtig, wenn man direkt vom completion_screen kommt
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForPendingBadge();
+    });
+
+    // Zusätzlicher Check nach einer kurzen Verzögerung, falls der Badge später gesetzt wird
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && !_isDialogShowing) {
+        _checkForPendingBadge();
+      }
+    });
+  }
+
+  void _checkForPendingBadge() {
+    if (_isDialogShowing || !mounted) return;
+
+    final navigationState = ref.read(navigationProvider);
+    final currentIndex = navigationState.currentIndex;
+    final badge = ref.read(badgeNotificationProvider);
+
+    // Nur anzeigen, wenn wir auf Tab 0 sind und ein Badge wartet
+    if (currentIndex == 0 && badge != null) {
+      _isDialogShowing = true;
+      // Badge sofort löschen
+      ref.read(badgeNotificationProvider.notifier).clearBadge();
+      // Dialog erst nach dem nächsten Frame anzeigen, um "widget tree locked" Fehler zu vermeiden
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isDialogShowing) {
+          _showBadgeCongratulationsDialog(context, badge);
+        }
+      });
+    }
   }
 
   @override
@@ -47,14 +84,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final navigationState = ref.watch(navigationProvider);
     final currentIndex = navigationState.currentIndex;
 
-    // Listen for badge notifications
+    // Listen for badge notifications - nur auf Home-Seite (Tab 0) anzeigen
     ref.listen<Map<String, dynamic>?>(badgeNotificationProvider, (
       previous,
       next,
     ) {
-      if (next != null) {
-        // Show badge congratulations dialog
-        _showBadgeCongratulationsDialog(context, next);
+      // Nur anzeigen, wenn:
+      // 1. Ein Badge vorhanden ist (next != null)
+      // 2. Wir auf der Home-Seite sind (currentIndex == 0)
+      // 3. Der vorherige Wert null war (um mehrfaches Anzeigen zu vermeiden)
+      // 4. Kein Dialog bereits angezeigt wird
+      if (next != null &&
+          currentIndex == 0 &&
+          previous == null &&
+          !_isDialogShowing) {
+        _isDialogShowing = true;
+        // Badge sofort löschen, damit der Listener nicht erneut feuert
+        ref.read(badgeNotificationProvider.notifier).clearBadge();
+        // Dialog erst nach dem nächsten Frame anzeigen, um "widget tree locked" Fehler zu vermeiden
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _isDialogShowing) {
+            _showBadgeCongratulationsDialog(context, next);
+          }
+        });
       }
     });
 
@@ -72,7 +124,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (user == null) return;
 
     // Check both local and cloud (via shouldShowSyncPrompt)
-    final shouldShow = await ref.read(syncServiceProvider).shouldShowSyncPrompt();
+    final shouldShow = await ref
+        .read(syncServiceProvider)
+        .shouldShowSyncPrompt();
     if (!shouldShow) return;
 
     if (!mounted) return;
@@ -105,7 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Set syncPromptShown: true (locally)
     await ref.read(userPrefsProvider.notifier).setSyncPromptShown();
-    
+
     if (enabled == true) {
       // User chose "Synchronisieren"
       await ref.read(userPrefsProvider.notifier).updateSyncEnabled(true);
@@ -180,6 +234,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onNavigationTap(int index) {
     ref.read(navigationProvider.notifier).setCurrentIndex(index);
+
+    // Wenn zur Home-Seite navigiert wird, prüfen ob ein Badge wartet
+    if (index == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _isDialogShowing) return;
+        _checkForPendingBadge();
+      });
+    }
   }
 
   void _showBadgeCongratulationsDialog(
@@ -190,7 +252,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => BadgeCongratulationsDialog(badge: badge),
-    );
+    ).then((_) {
+      // Nach dem Schließen des Dialogs Flag zurücksetzen
+      if (mounted) {
+        _isDialogShowing = false;
+      }
+    });
   }
 
   Widget _buildHeader() {
