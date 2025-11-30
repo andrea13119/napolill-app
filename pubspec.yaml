@@ -72,10 +72,6 @@ dependencies:
   permission_handler: ^11.3.1
   device_info_plus: ^10.1.2
   url_launcher: ^6.2.5
-
-  # Notifications
-  flutter_local_notifications: ^17.2.3
-  timezone: ^0.9.4
   package_info_plus: ^8.0.2
 
 dev_dependencies:

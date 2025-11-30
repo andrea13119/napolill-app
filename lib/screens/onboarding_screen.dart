@@ -59,7 +59,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     OnboardingPageData(
       title: 'AGB',
       content:
-          'Allgemeine Nutzungsbedingungen der Napolill App (MVP-Version)\n\n1. Zweck der App\nDiese App bietet Audio-Inhalte zur Selbstreflexion. Sie ist ausschließlich für den privaten Gebrauch bestimmt. Es werden keine Ergebnisse garantiert.\n\n2. Keine medizinische Anwendung\nDie Inhalte sind keine Therapie und ersetzen keine psychologische, medizinische oder psychiatrische Behandlung.\n\n3. Haftungsausschluss\nDie Nutzung erfolgt auf eigene Gefahr. Es wird keine Haftung für unerwünschte emotionale Reaktionen oder technische Probleme übernommen. Die Lichtimpulsfunktion ist freiwillig, falls aktiviert.\n\n4. Datenschutz\nInformationen zur Datenspeicherung findest du im "Datenschutz"-Menü. Wir halten uns an die DSGVO.\n\n5. Account & Löschung\nDu kannst deinen Account jederzeit löschen. Alle gespeicherten Inhalte werden unwiderruflich entfernt.\n\n6. Updates & Änderungen\nFunktionen können geändert oder erweitert werden. Über wesentliche Änderungen wirst du per App-Benachrichtigung informiert.\n\n[Vollständige AGB](https://napolill.com/terms)',
+          'Allgemeine Nutzungsbedingungen der Napolill App (MVP-Version)\n\n1. Zweck der App\nDiese App bietet Audio-Inhalte zur Selbstreflexion. Sie ist ausschließlich für den privaten Gebrauch bestimmt. Es werden keine Ergebnisse garantiert.\n\n2. Keine medizinische Anwendung\nDie Inhalte sind keine Therapie und ersetzen keine psychologische, medizinische oder psychiatrische Behandlung.\n\n3. Haftungsausschluss\nDie Nutzung erfolgt auf eigene Gefahr. Es wird keine Haftung für unerwünschte emotionale Reaktionen oder technische Probleme übernommen. Die Lichtimpulsfunktion ist freiwillig, falls aktiviert.\n\n4. Datenschutz\nInformationen zur Datenspeicherung findest du im "Datenschutz"-Menü. Wir halten uns an die DSGVO.\n\n5. Account & Löschung\nDu kannst deinen Account jederzeit löschen. Alle gespeicherten Inhalte werden unwiderruflich entfernt.\n\n6. Updates & Änderungen\nFunktionen können geändert oder erweitert werden.\n\n[Vollständige AGB](https://napolill.com/terms)',
     ),
     OnboardingPageData(
       title: 'Hinweis bei Kontoerstellung',
@@ -79,22 +79,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         'Ich leide nicht an Epilepsie, lichtbedingter Migräne oder anderen neurologischen Erkrankungen, die durch wiederholte akustische oder visuelle Reize ausgelöst werden könnten.',
         'Ich habe die [Datenschutzrichtlinien](https://napolill.com/privacy) und [Nutzungsbedingungen](https://napolill.com/terms) gelesen und akzeptiert.',
         'ICH BESTÄTIGE DIE OBEN GENANNTEN HINWEISE UND MÖCHTE DIE APP NUTZEN.',
-      ],
-    ),
-    OnboardingPageData(
-      title: 'Push-Benachrichtigung',
-      content:
-          'Möchtest du tägliche Erinnerungen aktivieren?\n\nNapolill kann dich daran erinnern, deine Affirmation des Tages zu hören.',
-      showCheckbox: true,
-      checkboxText:
-          'JA, ICH MÖCHTE TÄGLICH ERINNERT WERDEN. (DIESE EINSTELLUNG KANN SPÄTER IM MENÜ GEÄNDERT WERDEN.)',
-      showNotificationTimes: true,
-      notificationTimes: [
-        {'hour': 9, 'minute': 0, 'label': 'Morgen (09:00 Uhr)'},
-        {'hour': 12, 'minute': 0, 'label': 'Mittag (12:00 Uhr)'},
-        {'hour': 15, 'minute': 0, 'label': 'Nachmittag (15:00 Uhr)'},
-        {'hour': 18, 'minute': 0, 'label': 'Abend (18:00 Uhr)'},
-        {'hour': 21, 'minute': 0, 'label': 'Nacht (21:00 Uhr)'},
       ],
     ),
   ];
@@ -139,104 +123,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Future<void> _handlePushNotificationChoice(bool enabled) async {
-    // Handle push notification choice and wait for completion
-    if (enabled) {
-      await _handlePushNotificationEnabled();
-    } else {
-      await _handlePushNotificationDisabled();
-    }
-  }
-
-  Future<void> _handlePushNotificationEnabled() async {
-    try {
-      // Request notification permission and setup
-      final notificationService = ref.read(notificationServiceProvider);
-      await notificationService.initialize();
-
-      final hasPermission = await notificationService.requestPermission();
-
-      if (hasPermission) {
-        // Get selected time (default to 9:00 if not selected yet)
-        final userPrefs = ref.read(userPrefsProvider);
-        final hour = userPrefs.notificationHour;
-        final minute = userPrefs.notificationMinute;
-
-        // Schedule daily reminder at selected time
-        await notificationService.scheduleDailyReminder(
-          hour: hour,
-          minute: minute,
-          title: 'Napolill Erinnerung',
-          body: 'Zeit für deine tägliche Affirmation! 🌟',
-        );
-
-        // Update user preferences
-        await ref.read(userPrefsProvider.notifier).updatePushAllowed(true);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Benachrichtigungen aktiviert! Du wirst täglich um ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} Uhr erinnert.',
-              ),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        // Permission denied
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Benachrichtigungen wurden nicht aktiviert. Du kannst das später in den Einstellungen ändern.',
-              ),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error handling push notifications: $e');
-      // Update preferences anyway
-      await ref.read(userPrefsProvider.notifier).updatePushAllowed(true);
-    }
-  }
-
-  Future<void> _handleNotificationTimeSelected(int hour, int minute) async {
-    try {
-      // Update notification time in preferences
-      await ref
-          .read(userPrefsProvider.notifier)
-          .updateNotificationTime(hour, minute);
-
-      // Get notification service and check if we have permission
-      final notificationService = ref.read(notificationServiceProvider);
-      final hasPermission = await notificationService.hasPermission();
-
-      if (hasPermission) {
-        // Reschedule with new time immediately
-        await notificationService.scheduleDailyReminder(
-          hour: hour,
-          minute: minute,
-          title: 'Napolill Erinnerung',
-          body: 'Zeit für deine tägliche Affirmation! 🌟',
-        );
-      }
-    } catch (e) {
-      debugPrint('Error handling notification time selection: $e');
-    }
-  }
-
-  Future<void> _handlePushNotificationDisabled() async {
-    // User chose "Später" - just update preferences
-    await ref.read(userPrefsProvider.notifier).updatePushAllowed(false);
-  }
-
   Future<void> _skipToTopicSelection() async {
-    // Auch wenn der User die Push-Benachrichtigungen überspringt,
-    // müssen die Onboarding-Flags gesetzt werden, damit das Onboarding
-    // nicht wieder erscheint
     await _completeOnboarding();
   }
 
@@ -310,14 +197,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           : null, // No back button on first page
                       onSkip: index == _pages.length - 1
                           ? _skipToTopicSelection
-                          : null,
-                      onPushNotificationChoice: index == _pages.length - 1
-                          ? (bool enabled) =>
-                                _handlePushNotificationChoice(enabled)
-                          : null,
-                      onNotificationTimeSelected: index == _pages.length - 1
-                          ? (int hour, int minute) =>
-                                _handleNotificationTimeSelected(hour, minute)
                           : null,
                       onCheckboxStateChanged: index == 1
                           ? (bool checked) {

@@ -4,7 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/intro_screen.dart';
 import 'services/storage_service.dart';
-import 'services/notification_service.dart';
 import 'services/audio_service.dart';
 import 'utils/app_theme.dart';
 import 'services/sync_service.dart';
@@ -20,10 +19,6 @@ void main() async {
   // Initialize services
   final storageService = StorageService();
   await storageService.initialize();
-
-  // Initialize notification service
-  final notificationService = NotificationService();
-  await notificationService.initialize();
 
   // Initialize audio service
   final audioService = AudioService();

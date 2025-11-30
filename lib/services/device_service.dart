@@ -99,28 +99,6 @@ class DeviceService {
     }
   }
 
-  /// Check notification permission status
-  Future<bool> hasNotificationPermission() async {
-    try {
-      final status = await Permission.notification.status;
-      return status.isGranted;
-    } catch (e) {
-      debugPrint('Error checking notification permission: $e');
-      return false;
-    }
-  }
-
-  /// Request notification permission
-  Future<bool> requestNotificationPermission() async {
-    try {
-      final status = await Permission.notification.request();
-      return status.isGranted;
-    } catch (e) {
-      debugPrint('Error requesting notification permission: $e');
-      return false;
-    }
-  }
-
   /// Open device settings for this app
   Future<void> openDeviceSettings() async {
     try {

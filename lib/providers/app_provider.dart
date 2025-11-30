@@ -7,7 +7,6 @@ import '../models/draft_state.dart';
 import '../models/listen_log.dart';
 import '../services/storage_service.dart';
 import '../services/audio_service.dart';
-import '../services/notification_service.dart';
 import '../services/device_service.dart';
 import '../utils/mood_theme.dart';
 
@@ -19,11 +18,6 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 // Audio Service Provider
 final audioServiceProvider = Provider<AudioService>((ref) {
   return AudioService();
-});
-
-// Notification Service Provider
-final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService();
 });
 
 // Device Service Provider
@@ -116,19 +110,6 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
 
   Future<void> updateAGB(bool accepted) async {
     state = state.copyWith(agbAccepted: accepted);
-    await _storageService.saveUserPrefs(state);
-  }
-
-  Future<void> updatePushAllowed(bool allowed) async {
-    state = state.copyWith(pushAllowed: allowed);
-    await _storageService.saveUserPrefs(state);
-  }
-
-  Future<void> updateNotificationTime(int hour, int minute) async {
-    state = state.copyWith(
-      notificationHour: hour,
-      notificationMinute: minute,
-    );
     await _storageService.saveUserPrefs(state);
   }
 

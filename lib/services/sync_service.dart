@@ -57,8 +57,9 @@ class SyncService {
   // Full-Pull entfernt – Delta-Sync reicht aus
 
   /// Push local changes to cloud (can be called after local updates)
-  Future<void> pushUserPrefsIfEnabled() async {
-    if (!_syncEnabled) return;
+  /// If force is true, pushes even if sync is disabled (useful when disabling sync)
+  Future<void> pushUserPrefsIfEnabled({bool force = false}) async {
+    if (!_syncEnabled && !force) return;
     final user = _user;
     if (user == null) return;
     final prefs = ref.read(userPrefsProvider);
@@ -72,9 +73,12 @@ class SyncService {
         _prefsToMap(prefs)..['updatedAt'] = FieldValue.serverTimestamp(),
         SetOptions(merge: true),
       );
-      await ref
-          .read(userPrefsProvider.notifier)
-          .updateLastSyncAt(DateTime.now());
+      // Only update lastSyncAt if sync is actually enabled
+      if (_syncEnabled) {
+        await ref
+            .read(userPrefsProvider.notifier)
+            .updateLastSyncAt(DateTime.now());
+      }
     } catch (e) {
       debugPrint('Push user prefs failed: $e');
     }
