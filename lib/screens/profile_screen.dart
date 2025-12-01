@@ -1310,10 +1310,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                             _buildAchievementItem(
                               'Meister',
-                              'Schließe 100 Meditationen ab',
+                              'Schließe 100 Meditationen oder Dauerschleifen ab',
                               Icons.emoji_events,
-                              false, // Will be calculated from session count
-                              current: 0,
+                              stats['totalMeditationSessions'] as int >= 100,
+                              current: stats['totalMeditationSessions'] as int,
                               target: 100,
                             ),
                           ],

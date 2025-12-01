@@ -400,6 +400,7 @@ final statisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final monthListenTime = await storageService.getListenTimeForMonth();
   final totalAffirmations = await storageService.getTotalAffirmations();
   final totalRecordings = await storageService.getTotalRecordings();
+  final totalMeditationSessions = await storageService.getTotalMeditationSessions();
 
   return {
     'totalListenMinutes': totalListenTime,
@@ -410,6 +411,7 @@ final statisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
     'monthListenMinutes': monthListenTime,
     'totalAffirmations': totalAffirmations,
     'totalRecordings': totalRecordings,
+    'totalMeditationSessions': totalMeditationSessions,
   };
 });
 

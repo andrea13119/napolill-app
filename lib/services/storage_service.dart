@@ -719,7 +719,7 @@ class StorageService {
     badges.add({
       'id': 'master',
       'name': 'Meister',
-      'description': '100 Meditationen abgeschlossen',
+      'description': '100 Meditationen oder Dauerschleifen abgeschlossen',
       'icon': 'emoji_events',
       'earned': totalMeditationSessions >= 100,
       'color': Colors.amber,
