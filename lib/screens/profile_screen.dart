@@ -9,6 +9,7 @@ import '../models/user_prefs.dart';
 import '../services/sync_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import 'home_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -82,7 +83,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              // Navigate to HomeScreen and reset navigation to tab 0
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(initialTabIndex: 0),
+                ),
+                (route) => false,
+              );
+            },
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
           Expanded(

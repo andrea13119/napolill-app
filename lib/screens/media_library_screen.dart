@@ -4,6 +4,7 @@ import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../providers/app_provider.dart';
 import 'category_detail_screen.dart';
+import 'home_screen.dart';
 
 class MediaLibraryScreen extends ConsumerStatefulWidget {
   const MediaLibraryScreen({super.key});
@@ -43,12 +44,31 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: Image.asset(
-          'assets/images/logo_napolill.png',
-          height: 80,
-          fit: BoxFit.contain,
-        ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              // Navigate to HomeScreen and reset navigation to tab 0
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(initialTabIndex: 0),
+                ),
+                (route) => false,
+              );
+            },
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          Expanded(
+            child: Center(
+              child: Image.asset(
+                'assets/images/logo_napolill.png',
+                height: 80,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(width: 48), // Platzhalter für symmetrisches Layout
+        ],
       ),
     );
   }
