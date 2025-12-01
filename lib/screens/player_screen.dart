@@ -981,16 +981,34 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     final neutralTheme = MoodTheme.standard;
 
     return Scaffold(
-      body: GestureDetector(
-        onPanUpdate: (_) => _onUserInteraction(),
-        onTap: () => _onUserInteraction(),
-        child: Container(
-          decoration: BoxDecoration(gradient: neutralTheme.backgroundGradient),
-          child: SafeArea(
-            child: _isLocked ? _buildLockedView() : _buildPlayerView(),
-          ),
-        ),
-      ),
+      body: _isLocked
+          ? Container(
+              decoration: BoxDecoration(gradient: neutralTheme.backgroundGradient),
+              child: SafeArea(
+                child: _buildLockedView(),
+              ),
+            )
+          : Listener(
+              // Erfasst alle Pointer-Events, auch einfache Berührungen
+              // Nur im nicht-gesperrten Zustand aktiv
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => _onUserInteraction(),
+              onPointerMove: (_) => _onUserInteraction(),
+              child: GestureDetector(
+                // Zusätzliche Gesten-Handler für umfassende Berührungserkennung
+                onPanUpdate: (_) => _onUserInteraction(),
+                onPanDown: (_) => _onUserInteraction(),
+                onPanStart: (_) => _onUserInteraction(),
+                onTap: () => _onUserInteraction(),
+                onLongPress: () => _onUserInteraction(),
+                child: Container(
+                  decoration: BoxDecoration(gradient: neutralTheme.backgroundGradient),
+                  child: SafeArea(
+                    child: _buildPlayerView(),
+                  ),
+                ),
+              ),
+            ),
     );
   }
 
