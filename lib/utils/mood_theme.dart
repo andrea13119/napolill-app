@@ -13,6 +13,41 @@ class MoodTheme {
     required this.bottomNavColor,
   });
 
+  // Methode zum Anpassen der Helligkeit/Sättigung
+  MoodTheme withBrightness(double brightness) {
+    // brightness: 0.0 = gedämpft, 1.0 = voll
+    // Wir passen die Sättigung an, um die Farben weniger grell zu machen
+    final saturation = brightness.clamp(0.0, 1.0);
+    
+    return MoodTheme(
+      backgroundGradient: RadialGradient(
+        center: backgroundGradient.center,
+        radius: backgroundGradient.radius,
+        colors: backgroundGradient.colors.map((color) {
+          return _adjustColorBrightness(color, saturation);
+        }).toList(),
+        stops: backgroundGradient.stops,
+      ),
+      cardColor: _adjustColorBrightness(cardColor, saturation),
+      accentColor: _adjustColorBrightness(accentColor, saturation),
+      bottomNavColor: _adjustColorBrightness(bottomNavColor, saturation),
+    );
+  }
+
+  // Hilfsmethode zum Anpassen der Farbhelligkeit/Sättigung
+  Color _adjustColorBrightness(Color color, double saturation) {
+    if (saturation >= 1.0) return color;
+    
+    // Konvertiere zu HSL
+    final hsl = HSLColor.fromColor(color);
+    
+    // Reduziere die Sättigung basierend auf dem brightness-Wert
+    // Bei saturation = 0.5 wird die Sättigung halbiert
+    final adjustedSaturation = hsl.saturation * saturation;
+    
+    return hsl.withSaturation(adjustedSaturation).toColor();
+  }
+
   // 😠 WUETEND (Wütend) - Energiegeladen, kraftvoll
   static MoodTheme get wuetend => MoodTheme(
     backgroundGradient: const RadialGradient(

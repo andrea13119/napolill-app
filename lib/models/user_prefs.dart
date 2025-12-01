@@ -22,6 +22,8 @@ class UserPrefs {
   final bool syncEnabled; // Whether Firebase sync is enabled
   final DateTime? lastSyncAt; // Last completed sync timestamp
   final bool syncPromptShown; // Whether the first-run sync choice was shown
+  final double
+  moodBrightness; // Helligkeit der Mood-Farben (0.0 = gedämpft, 1.0 = voll)
 
   UserPrefs({
     this.displayName,
@@ -41,6 +43,7 @@ class UserPrefs {
     this.syncEnabled = false,
     this.lastSyncAt,
     this.syncPromptShown = false,
+    this.moodBrightness = 1.0, // Standard: volle Helligkeit
   });
 
   UserPrefs copyWith({
@@ -61,6 +64,7 @@ class UserPrefs {
     bool? syncEnabled,
     Object? lastSyncAt = _undefined,
     bool? syncPromptShown,
+    double? moodBrightness,
   }) {
     return UserPrefs(
       displayName: displayName ?? this.displayName,
@@ -85,6 +89,7 @@ class UserPrefs {
           ? this.lastSyncAt
           : lastSyncAt as DateTime?,
       syncPromptShown: syncPromptShown ?? this.syncPromptShown,
+      moodBrightness: moodBrightness ?? this.moodBrightness,
     );
   }
 
@@ -107,6 +112,7 @@ class UserPrefs {
       'syncEnabled': syncEnabled,
       'lastSyncAt': lastSyncAt?.toIso8601String(),
       'syncPromptShown': syncPromptShown,
+      'moodBrightness': moodBrightness,
     };
   }
 
@@ -142,6 +148,7 @@ class UserPrefs {
           ? DateTime.parse(json['lastSyncAt'])
           : null,
       syncPromptShown: json['syncPromptShown'] ?? false,
+      moodBrightness: (json['moodBrightness'] ?? 1.0).toDouble(),
     );
   }
 

@@ -15,6 +15,7 @@ class MoodCheck extends ConsumerStatefulWidget {
 
 class _MoodCheckState extends ConsumerState<MoodCheck> {
   String? _selectedMood;
+  double? _brightness; // Lokaler State für den Slider
 
   final List<MoodOption> _moodOptions = [
     MoodOption(mood: AppConstants.moodWuetend, emoji: '😠', color: Colors.red),
@@ -40,6 +41,14 @@ class _MoodCheckState extends ConsumerState<MoodCheck> {
   void initState() {
     super.initState();
     _loadTodayMood();
+    _loadBrightness();
+  }
+
+  void _loadBrightness() {
+    final userPrefs = ref.read(userPrefsProvider);
+    setState(() {
+      _brightness = userPrefs.moodBrightness;
+    });
   }
 
   void _loadTodayMood() {
@@ -82,6 +91,19 @@ class _MoodCheckState extends ConsumerState<MoodCheck> {
 
     // Invalidate mood statistics to refresh the mood overview immediately
     ref.invalidate(moodStatisticsProvider);
+  }
+
+  Future<void> _updateBrightness(double brightness) async {
+    setState(() {
+      _brightness = brightness;
+    });
+    
+    await ref
+        .read(userPrefsProvider.notifier)
+        .updateMoodBrightness(brightness);
+
+    // Trigger sync to Firebase
+    await ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
   }
 
   void _showMoodCheckInfo(BuildContext context) {
@@ -258,6 +280,63 @@ class _MoodCheckState extends ConsumerState<MoodCheck> {
                 );
               }).toList(),
             ),
+            // Neuer Helligkeitsregler - nur anzeigen wenn ein Mood ausgewählt ist
+            if (_selectedMood != null) ...[
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Icon(
+                    Icons.brightness_6,
+                    color: moodTheme.accentColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Helligkeit',
+                          style: AppTheme.bodyStyle.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Slider(
+                          value: _brightness ?? 1.0,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          activeColor: moodTheme.accentColor,
+                          inactiveColor: Colors.white.withValues(alpha: 0.3),
+                          onChanged: _updateBrightness,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Gedämpft',
+                              style: AppTheme.captionStyle.copyWith(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            Text(
+                              'Voll',
+                              style: AppTheme.captionStyle.copyWith(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

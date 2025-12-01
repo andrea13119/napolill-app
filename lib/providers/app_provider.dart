@@ -185,6 +185,13 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
     await _storageService.saveUserPrefs(state);
   }
 
+  Future<void> updateMoodBrightness(double brightness) async {
+    // Clamp brightness between 0.0 and 1.0
+    final clampedBrightness = brightness.clamp(0.0, 1.0);
+    state = state.copyWith(moodBrightness: clampedBrightness);
+    await _storageService.saveUserPrefs(state);
+  }
+
   Future<void> addEarnedBadge(String badgeId) async {
     if (!state.earnedBadgeIds.contains(badgeId)) {
       final updatedBadgeIds = List<String>.from(state.earnedBadgeIds);
@@ -520,6 +527,9 @@ final currentMoodThemeProvider = Provider<MoodTheme>((ref) {
     orElse: () => MoodEntry(date: today, mood: ''),
   );
 
-  // Return theme based on mood
-  return MoodTheme.fromMood(todayMood.mood);
+  // Get base theme based on mood
+  final baseTheme = MoodTheme.fromMood(todayMood.mood);
+  
+  // Apply brightness adjustment
+  return baseTheme.withBrightness(userPrefs.moodBrightness);
 });
