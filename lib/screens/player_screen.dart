@@ -1011,18 +1011,30 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
                 const SizedBox(height: 40),
 
+                // Play button and Stop button side by side
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Play button
+                    _buildPlayButton(),
+                    
+                    const SizedBox(width: 24),
+                    
+                    // Stop button
+                    _buildControlButton(
+                      icon: Icons.stop,
+                      onPressed: _isPlaying
+                          ? () => _stopPlayback(isManualStop: true)
+                          : null,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 40),
+
                 // Progress indicator
                 _buildProgressIndicator(),
-
-                const SizedBox(height: 40),
-
-                // Play button
-                _buildPlayButton(),
-
-                const SizedBox(height: 40),
-
-                // Controls
-                _buildControls(),
 
                 const SizedBox(height: 24),
 
@@ -1054,71 +1066,242 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Lock icon with progress indicator
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                // Progress circle
-                if (_isUnlocking)
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CircularProgressIndicator(
-                      value: 1.0, // Will be animated
-                      strokeWidth: 4,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white.withValues(alpha: 0.7),
+            // Lock icon with progress indicator in premium container
+            Container(
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    neutralTheme.cardColor.withValues(alpha: 0.4),
+                    neutralTheme.cardColor.withValues(alpha: 0.25),
+                  ],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                  BoxShadow(
+                    color: neutralTheme.accentColor.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Progress circle
+                  if (_isUnlocking)
+                    SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: CircularProgressIndicator(
+                        value: 1.0, // Will be animated
+                        strokeWidth: 5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          neutralTheme.accentColor,
+                        ),
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
+                  // Lock icon
+                  Icon(
+                    Icons.lock,
+                    size: 60,
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
-                // Lock icon
-                Icon(
-                  Icons.lock,
-                  size: 80,
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            Text(
-              _isUnlocking
-                  ? 'Halte gedrückt...'
-                  : 'Halte 1 Sekunde zum Entsperren',
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 20,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
+                ],
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 32),
 
-            Text(
-              widget.entry.title,
-              style: AppTheme.bodyStyle.copyWith(fontSize: 18),
-              textAlign: TextAlign.center,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    neutralTheme.cardColor.withValues(alpha: 0.3),
+                    neutralTheme.cardColor.withValues(alpha: 0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Text(
+                _isUnlocking
+                    ? 'Halte gedrückt...'
+                    : 'Halte 1 Sekunde zum Entsperren',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
 
             const SizedBox(height: 24),
 
-            // Mini progress indicator
+            // Title with premium styling
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 40),
-              child: LinearProgressIndicator(
-                value: _getProgressValue(),
-                backgroundColor: Colors.white.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    neutralTheme.cardColor.withValues(alpha: 0.5),
+                    neutralTheme.cardColor.withValues(alpha: 0.35),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.25),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                    spreadRadius: -5,
+                  ),
+                  BoxShadow(
+                    color: neutralTheme.accentColor.withValues(alpha: 0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    widget.entry.title,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 32),
 
-            Text(
-              _formatTime(_currentTime),
-              style: AppTheme.bodyStyle.copyWith(fontSize: 16),
+            // Mini progress indicator with premium styling
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 60),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    neutralTheme.cardColor.withValues(alpha: 0.4),
+                    neutralTheme.cardColor.withValues(alpha: 0.25),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.15),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Progress bar with enhanced design (matching player view)
+                  Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return Stack(
+                          children: [
+                            // Background
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            // Progress fill with gradient
+                            FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: _getProgressValue(),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      neutralTheme.accentColor,
+                                      neutralTheme.accentColor.withValues(alpha: 0.8),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: neutralTheme.accentColor.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _formatTime(_currentTime),
+                    style: AppTheme.bodyStyle.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1127,15 +1310,56 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    final neutralTheme = MoodTheme.standard;
+    
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            neutralTheme.cardColor.withValues(alpha: 0.4),
+            neutralTheme.cardColor.withValues(alpha: 0.25),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: neutralTheme.accentColor.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: -3,
+          ),
+          BoxShadow(
+            color: neutralTheme.accentColor.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {
-              _stopPlayback(isManualStop: true);
-            },
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                _stopPlayback(isManualStop: true);
+              },
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+            ),
           ),
           Expanded(
             child: Center(
@@ -1145,22 +1369,58 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                     widget.mode == 'meditation'
                         ? 'Meditation'
                         : 'Dauerschleife',
-                    style: AppTheme.headingStyle.copyWith(fontSize: 24),
+                    style: AppTheme.headingStyle.copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Container(width: 100, height: 1, color: Colors.white),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 80,
+                    height: 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          neutralTheme.accentColor.withValues(alpha: 0.6),
+                          Colors.transparent,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     widget.entry.title,
-                    style: AppTheme.appTaglineStyle.copyWith(fontSize: 12),
+                    style: AppTheme.appTaglineStyle.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
           ),
-          IconButton(
-            onPressed: _toggleLock,
-            icon: const Icon(Icons.lock, color: Colors.white),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: _toggleLock,
+              icon: Icon(
+                _isLocked ? Icons.lock : Icons.lock_open,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -1168,117 +1428,263 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   Widget _buildEntryInfo() {
-    return Column(
-      children: [
-        Icon(
-          _getCategoryIcon(widget.entry.category),
-          color: Colors.white,
-          size: 48,
+    final neutralTheme = MoodTheme.standard;
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            neutralTheme.cardColor.withValues(alpha: 0.5),
+            neutralTheme.cardColor.withValues(alpha: 0.35),
+          ],
         ),
-        const SizedBox(height: 16),
-        Text(
-          widget.entry.title,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: neutralTheme.accentColor.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: -5,
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '${widget.entry.takes.where((take) => take.isNotEmpty).length} Affirmationen',
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-            color: Colors.white70,
-            fontWeight: FontWeight.w400,
+          BoxShadow(
+            color: neutralTheme.accentColor.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: neutralTheme.accentColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: neutralTheme.accentColor.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              _getCategoryIcon(widget.entry.category),
+              color: neutralTheme.accentColor,
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            widget.entry.title,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: 60,
+            height: 2,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  neutralTheme.accentColor.withValues(alpha: 0.6),
+                  Colors.transparent,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${widget.entry.takes.where((take) => take.isNotEmpty).length} Affirmationen',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 15,
+              color: Colors.white.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildProgressIndicator() {
-    return Column(
-      children: [
-        // Time display
-        Text(
-          _formatTime(_currentTime),
-          style: AppTheme.headingStyle.copyWith(fontSize: 32),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Progress bar
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: AnimatedBuilder(
-            animation: _progressAnimation,
-            builder: (context, child) {
-              return FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: _getProgressValue(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // Mode indicator with readiness status
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.mode == 'meditation'
-                  ? 'Meditation • ${widget.durationMinutes} min'
-                  : 'Dauerschleife',
-              style: AppTheme.bodyStyle.copyWith(fontSize: 14),
-            ),
-            const SizedBox(width: 8),
-            // Readiness indicator
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color:
-                    _selectedBackgroundMusic != null &&
-                        _selectedBackgroundMusic != 'none'
-                    ? Colors.green
-                    : Colors.orange,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              _selectedBackgroundMusic != null &&
-                      _selectedBackgroundMusic != 'none'
-                  ? 'Bereit'
-                  : 'Lädt...',
-              style: AppTheme.bodyStyle.copyWith(
-                fontSize: 10,
-                color:
-                    _selectedBackgroundMusic != null &&
-                        _selectedBackgroundMusic != 'none'
-                    ? Colors.green
-                    : Colors.orange,
-              ),
-            ),
+    final neutralTheme = MoodTheme.standard;
+    final hasBackgroundMusic = _selectedBackgroundMusic != null &&
+        _selectedBackgroundMusic != 'none';
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            neutralTheme.cardColor.withValues(alpha: 0.4),
+            neutralTheme.cardColor.withValues(alpha: 0.25),
           ],
         ),
-      ],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: neutralTheme.accentColor.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: -5,
+          ),
+          BoxShadow(
+            color: neutralTheme.accentColor.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Time display
+          Text(
+            _formatTime(_currentTime),
+            style: AppTheme.headingStyle.copyWith(
+              fontSize: 36,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
+              shadows: [
+                Shadow(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Progress bar with enhanced design
+          Container(
+            height: 10,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return Stack(
+                  children: [
+                    // Background
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    // Progress fill with gradient
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _getProgressValue(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              neutralTheme.accentColor,
+                              neutralTheme.accentColor.withValues(alpha: 0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: neutralTheme.accentColor.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Mode indicator with readiness status
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.mode == 'meditation'
+                      ? 'Meditation • ${widget.durationMinutes} min'
+                      : 'Dauerschleife',
+                  style: AppTheme.bodyStyle.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Readiness indicator with pulse
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: hasBackgroundMusic ? Colors.green : Colors.orange,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (hasBackgroundMusic ? Colors.green : Colors.orange)
+                            .withValues(alpha: 0.6),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  hasBackgroundMusic ? 'Bereit' : 'Lädt...',
+                  style: AppTheme.bodyStyle.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: hasBackgroundMusic ? Colors.green : Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1294,6 +1700,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
     final hasBackgroundMusic =
         _selectedBackgroundMusic != null && _selectedBackgroundMusic != 'none';
+    final buttonColor = _getPlayButtonColor();
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
@@ -1301,56 +1708,111 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         return Transform.scale(
           scale: (_isPlaying && !_isPaused) ? _pulseAnimation.value : 1.0,
           child: Container(
-            width: 120,
-            height: 120,
+            width: 140,
+            height: 140,
             decoration: BoxDecoration(
-              color: _getPlayButtonColor(),
               shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  buttonColor,
+                  buttonColor.withValues(alpha: 0.85),
+                ],
+              ),
               boxShadow: [
+                // Main shadow
                 BoxShadow(
-                  color: _getPlayButtonColor().withValues(alpha: 0.3),
+                  color: buttonColor.withValues(alpha: 0.4),
+                  blurRadius: 30,
+                  spreadRadius: 8,
+                  offset: const Offset(0, 10),
+                ),
+                // Inner glow
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.1),
                   blurRadius: 20,
-                  spreadRadius: 5,
+                  spreadRadius: -5,
                 ),
                 // Additional shadow for background music indication
                 if (hasBackgroundMusic && !_isPlaying)
                   BoxShadow(
-                    color: currentMusicOption['color'].withValues(alpha: 0.4),
-                    blurRadius: 15,
-                    spreadRadius: 2,
+                    color: currentMusicOption['color'].withValues(alpha: 0.5),
+                    blurRadius: 20,
+                    spreadRadius: 3,
                   ),
               ],
             ),
             child: Stack(
               children: [
+                // Outer ring
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                  ),
+                ),
                 // Main play button
                 Center(
-                  child: IconButton(
-                    onPressed: _togglePlayback,
-                    icon: Icon(
-                      _getPlayButtonIcon(),
-                      color: Colors.white,
-                      size: 48,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.15),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    child: IconButton(
+                      onPressed: _togglePlayback,
+                      icon: Icon(
+                        _getPlayButtonIcon(),
+                        color: Colors.white,
+                        size: 52,
+                      ),
                     ),
                   ),
                 ),
                 // Background music indicator in bottom-right corner
                 if (hasBackgroundMusic && !_isPlaying)
                   Positioned(
-                    bottom: 8,
-                    right: 8,
+                    bottom: 10,
+                    right: 10,
                     child: Container(
-                      width: 24,
-                      height: 24,
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
-                        color: currentMusicOption['color'],
+                        gradient: LinearGradient(
+                          colors: [
+                            currentMusicOption['color'],
+                            (currentMusicOption['color'] as Color)
+                                .withValues(alpha: 0.8),
+                          ],
+                        ),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentMusicOption['color']
+                                .withValues(alpha: 0.6),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.music_note,
                         color: Colors.white,
-                        size: 12,
+                        size: 14,
                       ),
                     ),
                   ),
@@ -1362,20 +1824,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     );
   }
 
-  Widget _buildControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Stop button
-        _buildControlButton(
-          icon: Icons.stop,
-          onPressed: _isPlaying
-              ? () => _stopPlayback(isManualStop: true)
-              : null,
-        ),
-      ],
-    );
-  }
 
   Widget _buildVolumeControl() {
     final neutralTheme = MoodTheme.standard;
@@ -1384,15 +1832,34 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Header in white text
-          Text(
-            'HINTERGRUNDMUSIK',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+          // Header with premium styling
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  neutralTheme.cardColor.withValues(alpha: 0.3),
+                  neutralTheme.cardColor.withValues(alpha: 0.2),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: neutralTheme.accentColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              'HINTERGRUNDMUSIK',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 15,
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 20),
@@ -1404,77 +1871,157 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  neutralTheme.cardColor,
-                  neutralTheme.cardColor.withValues(alpha: 0.9),
+                  neutralTheme.cardColor.withValues(alpha: 0.6),
+                  neutralTheme.cardColor.withValues(alpha: 0.45),
                 ],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: neutralTheme.accentColor.withValues(alpha: 0.3),
-                width: 1,
+                color: neutralTheme.accentColor.withValues(alpha: 0.2),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: neutralTheme.accentColor.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                  spreadRadius: -5,
+                ),
+                BoxShadow(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   // Music selection
                   _buildMusicSelection(),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+
+                  // Divider
+                  Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.white.withValues(alpha: 0.2),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
 
                   // Volume control with current volume indicator
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Lautstärke',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${(_backgroundVolume * 100).round()}%',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 1,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.volume_down, color: Colors.white70),
-                          Expanded(
-                            child: Slider(
-                              value: _backgroundVolume,
-                              onChanged: _setBackgroundVolume,
-                              activeColor: Colors.white,
-                              inactiveColor: Colors.white.withValues(
-                                alpha: 0.3,
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.volume_up,
+                                  color: neutralTheme.accentColor,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Lautstärke',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: neutralTheme.accentColor.withValues(
+                                  alpha: 0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: neutralTheme.accentColor.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                '${(_backgroundVolume * 100).round()}%',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13,
+                                  color: neutralTheme.accentColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          const Icon(Icons.volume_up, color: Colors.white70),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.volume_down,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              size: 20,
+                            ),
+                            Expanded(
+                              child: SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: neutralTheme.accentColor,
+                                  inactiveTrackColor:
+                                      Colors.white.withValues(alpha: 0.2),
+                                  thumbColor: neutralTheme.accentColor,
+                                  thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 10,
+                                  ),
+                                  trackHeight: 4,
+                                  overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 16,
+                                  ),
+                                ),
+                                child: Slider(
+                                  value: _backgroundVolume,
+                                  onChanged: _setBackgroundVolume,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.volume_up,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1486,6 +2033,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   Widget _buildMusicSelection() {
+    final neutralTheme = MoodTheme.standard;
+    
     debugPrint('=== BUILDING MUSIC SELECTION ===');
     debugPrint('Current _selectedBackgroundMusic: $_selectedBackgroundMusic');
 
@@ -1509,32 +2058,60 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                 padding: EdgeInsets.only(
                   bottom: index < _solfeggioOptions.length - 1 ? 12 : 0,
                 ),
-                child: InkWell(
-                  onTap: () => _switchBackgroundMusic(option['id']),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.white.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.3),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 2),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _switchBackgroundMusic(option['id']),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: isSelected
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.25),
+                                  Colors.white.withValues(alpha: 0.15),
+                                ],
+                              )
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.12),
+                                  Colors.white.withValues(alpha: 0.08),
+                                ],
                               ),
-                            ]
-                          : null,
-                    ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isSelected
+                              ? neutralTheme.accentColor.withValues(alpha: 0.5)
+                              : Colors.white.withValues(alpha: 0.2),
+                          width: isSelected ? 2 : 1.5,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: neutralTheme.accentColor
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 4),
+                                ),
+                                BoxShadow(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                      ),
                     child: Stack(
                       children: [
                         Padding(
@@ -1615,19 +2192,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         // Selection indicator
                         if (isSelected)
                           Positioned(
-                            top: 8,
-                            right: 8,
+                            top: 10,
+                            right: 10,
                             child: Container(
-                              width: 20,
-                              height: 20,
+                              width: 24,
+                              height: 24,
                               decoration: BoxDecoration(
-                                color: MoodTheme.standard.accentColor,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    neutralTheme.accentColor,
+                                    neutralTheme.accentColor
+                                        .withValues(alpha: 0.8),
+                                  ],
+                                ),
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: neutralTheme.accentColor
+                                        .withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
                               child: const Icon(
                                 Icons.check,
                                 color: Colors.white,
-                                size: 12,
+                                size: 14,
                               ),
                             ),
                           ),
@@ -1635,6 +2230,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                     ),
                   ),
                 ),
+              ),
               );
             }),
           ],
@@ -1648,17 +2244,48 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     required VoidCallback? onPressed,
   }) {
     final neutralTheme = MoodTheme.standard;
+    final isEnabled = onPressed != null;
 
     return Container(
-      width: 50,
-      height: 50,
+      width: 60,
+      height: 60,
       decoration: BoxDecoration(
-        color: onPressed != null ? neutralTheme.accentColor : Colors.grey,
+        gradient: isEnabled
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  neutralTheme.accentColor,
+                  neutralTheme.accentColor.withValues(alpha: 0.8),
+                ],
+              )
+            : null,
+        color: isEnabled ? null : Colors.grey.withValues(alpha: 0.3),
         shape: BoxShape.circle,
+        border: Border.all(
+          color: isEnabled
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.1),
+          width: 1.5,
+        ),
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: neutralTheme.accentColor.withValues(alpha: 0.4),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : null,
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 24),
+        icon: Icon(
+          icon,
+          color: Colors.white,
+          size: 26,
+        ),
       ),
     );
   }
