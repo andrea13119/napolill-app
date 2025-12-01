@@ -29,6 +29,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isDialogShowing =
       false; // Flag um zu verhindern, dass Dialog mehrfach angezeigt wird
 
+  bool get _isHomeRouteActive {
+    final route = ModalRoute.of(context);
+    return route?.isCurrent ?? false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,7 +63,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _checkForPendingBadge() {
-    if (_isDialogShowing || !mounted) return;
+    if (_isDialogShowing || !mounted || !_isHomeRouteActive) return;
 
     final navigationState = ref.read(navigationProvider);
     final currentIndex = navigationState.currentIndex;
@@ -92,10 +97,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Nur anzeigen, wenn:
       // 1. Ein Badge vorhanden ist (next != null)
       // 2. Wir auf der Home-Seite sind (currentIndex == 0)
-      // 3. Der vorherige Wert null war (um mehrfaches Anzeigen zu vermeiden)
-      // 4. Kein Dialog bereits angezeigt wird
+      // 3. Die Home-Route sichtbar ist
+      // 4. Der vorherige Wert null war (um mehrfaches Anzeigen zu vermeiden)
+      // 5. Kein Dialog bereits angezeigt wird
       if (next != null &&
           currentIndex == 0 &&
+          _isHomeRouteActive &&
           previous == null &&
           !_isDialogShowing) {
         _isDialogShowing = true;
