@@ -12,8 +12,17 @@ class BottomNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final moodTheme = ref.watch(currentMoodThemeProvider);
+    // Hole die tatsächliche Höhe der System-Navigationsleiste
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    // Container-Höhe = Inhalt (80) + System-Navigationsleiste (wenn vorhanden)
+    // So bleibt der Inhalt immer 80 Pixel hoch, unabhängig von der System-Navigationsleiste
+    final contentHeight = 80.0;
+    final containerHeight = contentHeight + bottomPadding;
+    // Padding für System-Navigationsleiste: verwende tatsächliche Höhe oder Mindestabstand von 24
+    final safeBottomPadding = bottomPadding > 0 ? bottomPadding : 24.0;
+    
     return Container(
-      height: 80,
+      height: containerHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -44,9 +53,9 @@ class BottomNavigation extends ConsumerWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.only(
-          top: 0, // Noch weniger Abstand vom oberen Rand
-          bottom: 24, // Weniger Abstand zum unteren Rand
+        padding: EdgeInsets.only(
+          top: 0,
+          bottom: safeBottomPadding,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
