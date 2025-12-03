@@ -191,7 +191,7 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   Future<void> updateProfileImage(String? imagePath) async {
     state = state.copyWith(profileImagePath: imagePath);
     await _storageService.saveUserPrefs(state);
-    // Note: Caller should trigger profile image sync after this
+    // Profile image is stored locally only, no cloud sync
   }
 
   Future<void> updateDefaultBackgroundVolume(double volume) async {

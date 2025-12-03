@@ -41,7 +41,7 @@ class SyncService {
       final syncEnabled = ref.read(userPrefsProvider).syncEnabled;
 
       if (!syncEnabled) return;
-      await _pullProfileImage(user.uid);
+      // Profile image is stored locally only, no cloud sync
       await _pullEntriesDelta(user.uid);
       await _pullDraftStatesDelta(user.uid);
       await _pullListenLogsDelta(user.uid);
@@ -64,13 +64,17 @@ class SyncService {
     if (user == null) return;
     final prefs = ref.read(userPrefsProvider);
     try {
+      final prefsMap = _prefsToMap(prefs);
+      // Remove profileImagePath - it's stored locally only, not synced to cloud
+      prefsMap.remove('profileImagePath');
+      
       final doc = _firestore
           .collection('users')
           .doc(user.uid)
           .collection('meta')
           .doc('user_prefs');
       await doc.set(
-        _prefsToMap(prefs)..['updatedAt'] = FieldValue.serverTimestamp(),
+        prefsMap..['updatedAt'] = FieldValue.serverTimestamp(),
         SetOptions(merge: true),
       );
       // Only update lastSyncAt if sync is actually enabled
@@ -88,7 +92,7 @@ class SyncService {
   Future<void> pushAll() async {
     if (!_syncEnabled || _user == null) return;
     await pushUserPrefsIfEnabled();
-    await pushProfileImage();
+    // Profile image is stored locally only, no cloud sync
     await pushEntries();
     await pushDraftStates();
     await pushListenLogs();
@@ -566,122 +570,7 @@ class SyncService {
   // Full-Pull MoodLogs entfernt
 
   // -------- Profile Image --------
-  Future<void> pushProfileImage() async {
-    if (!_syncEnabled || _user == null) {
-      debugPrint(
-        'Profile image push skipped: syncEnabled=$_syncEnabled, user=${_user != null}',
-      );
-      return;
-    }
-    final uid = _user!.uid;
-    final prefs = ref.read(userPrefsProvider);
-
-    debugPrint('Pushing profile image for user $uid');
-    debugPrint('Local profileImagePath: ${prefs.profileImagePath}');
-
-    try {
-      if (prefs.profileImagePath != null &&
-          prefs.profileImagePath!.isNotEmpty) {
-        final file = File(prefs.profileImagePath!);
-        debugPrint('Checking if file exists: ${file.path}');
-        if (await file.exists()) {
-          debugPrint('File exists, uploading to Firebase Storage...');
-          // Upload to Firebase Storage
-          final refPath =
-              'users/$uid/profile/profile_image${p.extension(prefs.profileImagePath!)}';
-          final storageRef = _storage.ref(refPath);
-          await storageRef.putFile(file);
-
-          // Get download URL
-          final downloadUrl = await storageRef.getDownloadURL();
-          debugPrint('Upload successful, download URL: $downloadUrl');
-
-          // Save URL to Firestore (in user_prefs document)
-          final doc = _firestore
-              .collection('users')
-              .doc(uid)
-              .collection('meta')
-              .doc('user_prefs');
-          await doc.set({
-            'profileImageUrl': downloadUrl,
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-
-          debugPrint(
-            'Profile image uploaded successfully and URL saved to Firestore',
-          );
-        } else {
-          debugPrint('Profile image file does not exist at path: ${file.path}');
-        }
-      } else {
-        debugPrint('No profile image path set, removing from cloud if exists');
-        // No profile image - remove from cloud if exists
-        final doc = _firestore
-            .collection('users')
-            .doc(uid)
-            .collection('meta')
-            .doc('user_prefs');
-        await doc.set({
-          'profileImageUrl': null,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
-    } catch (e) {
-      debugPrint('Push profile image failed: $e');
-    }
-  }
-
-  Future<void> _pullProfileImage(String uid) async {
-    try {
-      final doc = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('meta')
-          .doc('user_prefs')
-          .get();
-      if (!doc.exists) return;
-
-      final data = doc.data()!;
-      final profileImageUrl = data['profileImageUrl'] as String?;
-
-      if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
-        try {
-          // Download directly from URL using HTTP
-          final httpClient = HttpClient();
-          final request = await httpClient.getUrl(Uri.parse(profileImageUrl));
-          final response = await request.close();
-
-          if (response.statusCode == 200) {
-            final bytes = await response.expand((chunk) => chunk).toList();
-
-            // Save to local file
-            final docsDir = await getApplicationDocumentsDirectory();
-            final fileName = 'profile_synced.png';
-            final localPath = p.join(docsDir.path, fileName);
-            final file = File(localPath);
-            await file.writeAsBytes(bytes, flush: true);
-
-            // Update local path in UserPrefs
-            await ref
-                .read(userPrefsProvider.notifier)
-                .updateProfileImage(localPath);
-            debugPrint('Profile image downloaded successfully: $localPath');
-          }
-          httpClient.close();
-        } catch (e) {
-          debugPrint('Profile image download failed: $e');
-        }
-      } else {
-        // No profile image in cloud - clear local if exists
-        final currentPrefs = ref.read(userPrefsProvider);
-        if (currentPrefs.profileImagePath != null) {
-          await ref.read(userPrefsProvider.notifier).updateProfileImage(null);
-        }
-      }
-    } catch (e) {
-      debugPrint('Pull profile image failed: $e');
-    }
-  }
+  // Profile image functions removed - images are now stored locally only
 
   // -------- Helpers --------
   Future<String> _hashOfFile(File file) async {
