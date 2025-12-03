@@ -149,6 +149,7 @@ class SyncService {
     final local = ref.read(userPrefsProvider);
     debugPrint('Local syncEnabled: ${local.syncEnabled}');
     debugPrint('Local lastSyncAt: ${local.lastSyncAt}');
+    debugPrint('Local earnedBadgeIds: ${local.earnedBadgeIds}');
 
     final doc = await _firestore
         .collection('users')
@@ -163,8 +164,12 @@ class SyncService {
     final data = doc.data()!;
     debugPrint('Cloud syncEnabled: ${data['syncEnabled']}');
     debugPrint('Cloud updatedAt: ${data['updatedAt']}');
+    debugPrint('Cloud earnedBadgeIds: ${data['earnedBadgeIds']}');
 
     final cloudPrefs = UserPrefs.fromJson(data);
+    debugPrint(
+      'Cloud prefs earnedBadgeIds after parsing: ${cloudPrefs.earnedBadgeIds}',
+    );
 
     final lastSyncAt = local.lastSyncAt;
     // If we never synced or cloud has newer updatedAt → replace/merge
@@ -207,7 +212,7 @@ class SyncService {
       // da es nach Einträgen mit updatedAt > lastSyncAt sucht, aber lastSyncAt bereits auf
       // DateTime.now() gesetzt wurde.
       debugPrint(
-        'Merged userPrefs, syncEnabled after merge: ${mergedPrefs.syncEnabled}, syncPromptShown: ${mergedPrefs.syncPromptShown}, lastSyncAt: ${mergedPrefs.lastSyncAt}',
+        'Merged userPrefs, syncEnabled after merge: ${mergedPrefs.syncEnabled}, syncPromptShown: ${mergedPrefs.syncPromptShown}, earnedBadgeIds: ${mergedPrefs.earnedBadgeIds.length} badges: ${mergedPrefs.earnedBadgeIds}, lastSyncAt: ${mergedPrefs.lastSyncAt}',
       );
     } else {
       debugPrint('Not applying cloud changes (local is newer or same)');

@@ -647,6 +647,10 @@ class StorageService {
     final totalMeditationSessions = await getTotalMeditationSessions();
     final endlessSessionCount = await getEndlessSessionCount();
 
+    // Get saved earned badge IDs from user prefs
+    final userPrefs = await getUserPrefs();
+    final savedBadgeIds = Set<String>.from(userPrefs.earnedBadgeIds);
+
     // 1. Anmeldung & Erste Schritte
     // Willkommen badge (always earned)
     badges.add({
@@ -659,32 +663,38 @@ class StorageService {
     });
 
     // Erste Affirmation
+    final firstAffirmationEarned = savedBadgeIds.contains('first_affirmation') ||
+        totalAffirmations >= 1;
     badges.add({
       'id': 'first_affirmation',
       'name': 'Erste Affirmation',
       'description': 'Erste Affirmation aufgenommen',
       'icon': 'mic',
-      'earned': totalAffirmations >= 1,
+      'earned': firstAffirmationEarned,
       'color': Colors.purple,
     });
 
     // Erste Meditation
+    final firstMeditationEarned = savedBadgeIds.contains('first_meditation') ||
+        totalListenTime > 0;
     badges.add({
       'id': 'first_meditation',
       'name': 'Erste Meditation',
       'description': 'Erste Meditation abgeschlossen',
       'icon': 'play_arrow',
-      'earned': totalListenTime > 0,
+      'earned': firstMeditationEarned,
       'color': Colors.green,
     });
 
     // Erste Dauerschleife
+    final firstEndlessEarned = savedBadgeIds.contains('first_endless') ||
+        endlessSessionCount >= 1;
     badges.add({
       'id': 'first_endless',
       'name': 'Erste Dauerschleife',
       'description': 'Erste Endlos-Session abgeschlossen',
       'icon': 'all_inclusive',
-      'earned': endlessSessionCount >= 1,
+      'earned': firstEndlessEarned,
       'color': Colors.cyan,
     });
 
@@ -705,23 +715,28 @@ class StorageService {
 
     for (int i = 0; i < streakMilestones.length; i++) {
       final days = streakMilestones[i];
+      final streakBadgeId = 'streak_$days';
+      final streakEarned = savedBadgeIds.contains(streakBadgeId) ||
+          currentStreak >= days;
       badges.add({
-        'id': 'streak_$days',
+        'id': streakBadgeId,
         'name': '$days Tage Serie',
         'description': '$days Tage in Folge meditiert',
         'icon': 'local_fire_department',
-        'earned': currentStreak >= days,
+        'earned': streakEarned,
         'color': streakColors[i],
       });
     }
 
     // 3. Meditations-Meisterschaft
+    final masterEarned = savedBadgeIds.contains('master') ||
+        totalMeditationSessions >= 100;
     badges.add({
       'id': 'master',
       'name': 'Meister',
       'description': '100 Meditationen oder Dauerschleifen abgeschlossen',
       'icon': 'emoji_events',
-      'earned': totalMeditationSessions >= 100,
+      'earned': masterEarned,
       'color': Colors.amber,
     });
 

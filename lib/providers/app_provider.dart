@@ -8,6 +8,7 @@ import '../models/listen_log.dart';
 import '../services/storage_service.dart';
 import '../services/audio_service.dart';
 import '../services/device_service.dart';
+import '../services/sync_service.dart';
 import '../utils/mood_theme.dart';
 
 // Storage Service Provider
@@ -54,7 +55,16 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
       state = prefs;
 
       // Initialize already earned badges for existing users
-      await initializeEarnedBadges();
+      // BUT: Only if we don't have any badges yet
+      // This is mainly for local-only users or first-time setup
+      // Cloud sync will provide the badges, so we shouldn't overwrite them
+      if (state.earnedBadgeIds.isEmpty) {
+        await initializeEarnedBadges();
+      } else {
+        debugPrint(
+          'Skipping badge initialization - badges already exist (${state.earnedBadgeIds.length} badges: ${state.earnedBadgeIds})',
+        );
+      }
 
       // Signalisiere dass das Laden abgeschlossen ist
       if (!_loadCompleter!.isCompleted) {
@@ -202,7 +212,10 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   }
 
   // Initialize already earned badges (for existing users)
+  // This should only be called when we don't have badges from cloud sync
   Future<void> initializeEarnedBadges() async {
+    // Only initialize if we have no badges
+    // Cloud sync will provide the badges, so we shouldn't overwrite them
     if (state.earnedBadgeIds.isEmpty) {
       try {
         final allBadges = await _storageService.getEarnedBadges();
@@ -224,6 +237,10 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
       } catch (e) {
         debugPrint('Error initializing earned badges: $e');
       }
+    } else {
+      debugPrint(
+        'Skipping badge initialization - badges already exist (likely from cloud sync): ${state.earnedBadgeIds}',
+      );
     }
   }
 
@@ -447,17 +464,32 @@ class StatisticsNotifier extends StateNotifier<void> {
           .where((badge) => badge['earned'] == true)
           .toList();
 
-      // Find new badges
+      // Find new badges - save all, but show only the first one
+      Map<String, dynamic>? firstNewBadge;
+      bool hasNewBadges = false;
+
       for (final badge in earnedBadges) {
         final badgeId = badge['id'] as String;
         if (!oldBadgeIds.contains(badgeId)) {
-          // New badge earned!
+          // New badge earned! Save it
           await _ref.read(userPrefsProvider.notifier).addEarnedBadge(badgeId);
+          hasNewBadges = true;
 
-          // Show congratulations popup
-          _ref.read(badgeNotificationProvider.notifier).showBadge(badge);
-          break; // Show only one badge at a time
+          // Remember the first new badge to show popup
+          if (firstNewBadge == null) {
+            firstNewBadge = badge;
+          }
         }
+      }
+
+      // Sync to cloud if any new badges were added
+      if (hasNewBadges) {
+        await _ref.read(syncServiceProvider).pushUserPrefsIfEnabled();
+      }
+
+      // Show congratulations popup for the first new badge only
+      if (firstNewBadge != null) {
+        _ref.read(badgeNotificationProvider.notifier).showBadge(firstNewBadge);
       }
     } catch (e) {
       debugPrint('Error checking for new badges: $e');
