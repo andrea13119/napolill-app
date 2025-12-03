@@ -31,7 +31,7 @@ final userPrefsProvider = StateNotifierProvider<UserPrefsNotifier, UserPrefs>((
   ref,
 ) {
   final storageService = ref.watch(storageServiceProvider);
-  return UserPrefsNotifier(storageService);
+  return UserPrefsNotifier(storageService, ref);
 });
 
 // Provider, der darauf wartet, dass die UserPrefs geladen sind
@@ -42,9 +42,10 @@ final userPrefsLoadedProvider = FutureProvider<UserPrefs>((ref) async {
 
 class UserPrefsNotifier extends StateNotifier<UserPrefs> {
   final StorageService _storageService;
+  final Ref _ref;
   Completer<UserPrefs>? _loadCompleter;
 
-  UserPrefsNotifier(this._storageService) : super(UserPrefs()) {
+  UserPrefsNotifier(this._storageService, this._ref) : super(UserPrefs()) {
     _loadUserPrefs();
   }
 
@@ -158,6 +159,9 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
 
     state = state.copyWith(moods: updatedMoods);
     await _storageService.saveUserPrefs(state);
+    
+    // Trigger sync to Firebase if enabled (pushMoodLogs checks syncEnabled internally)
+    await _ref.read(syncServiceProvider).pushMoodLogs();
   }
 
   Future<void> updateVibration(bool enabled) async {
@@ -372,13 +376,14 @@ class DraftStatesNotifier extends StateNotifier<Map<String, DraftState>> {
 final listenLogsProvider =
     StateNotifierProvider<ListenLogsNotifier, List<ListenLog>>((ref) {
       final storageService = ref.watch(storageServiceProvider);
-      return ListenLogsNotifier(storageService);
+      return ListenLogsNotifier(storageService, ref);
     });
 
 class ListenLogsNotifier extends StateNotifier<List<ListenLog>> {
   final StorageService _storageService;
+  final Ref _ref;
 
-  ListenLogsNotifier(this._storageService) : super([]) {
+  ListenLogsNotifier(this._storageService, this._ref) : super([]) {
     _loadListenLogs();
   }
 
@@ -390,6 +395,9 @@ class ListenLogsNotifier extends StateNotifier<List<ListenLog>> {
   Future<void> addListenLog(ListenLog log) async {
     await _storageService.saveListenLog(log);
     state = [log, ...state];
+    
+    // Trigger sync to Firebase if enabled (pushListenLogs checks syncEnabled internally)
+    await _ref.read(syncServiceProvider).pushListenLogs();
   }
 
   Future<void> refreshListenLogs() async {
